@@ -1,6 +1,6 @@
 # NEWEST__CCLE
 
-* This folder contains the R files and original datasets used to identify discordant transcripts
+* This folder contains the R files and original datasets used to identify discordant transcripts in **CCLE data**
 * Specifically, we clean data, run correlation analyses, and test significance between correlation values
 
 ## This folder has the following steps:
@@ -10,7 +10,7 @@
    * Where are the original data sets from? Kallisto? Tsoi?
    * **We need URL's or sources for this data**
 2. The cleaned data is copied to the folders `CoCor_Data_sets` and `Cleaned_data_sets`
-3. Correlation analysis (pearson, spearman, CoCor, FDR) all run in `/CoCor_Data_sets/CoCor_CCLE.R`
+3. Correlation analysis (pearson, spearman, CoCor, FDR) all run in `/CoCor_analysis/CoCor_CCLE.R`
    * Filter out sample `ACH-000931` because it has duplicate data
    * Calculates correlations (pearson, spearman) between transcript-MITF, gene-MITF, transcript-gene (in case dependency)
    * Uses [cocor.dep.groups.overlap](https://cran.r-project.org/web/packages/cocor/cocor.pdf) to test significance between the transcript-MITF and gene-MITF correlations
@@ -21,7 +21,8 @@
      * Gene-MITF correlation <= 0.05
      * FDR p-value < 0.05
      * `transcript_type` = protein_coding
-   * This will give us the **discordant transcripts**
+   * This will give us the **discordant transcripts** from the CCLE data
+   * We continue to collect discordant transcripts in the `Tsoi` folder
 
 
 ## Notes:
