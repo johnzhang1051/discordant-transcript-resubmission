@@ -34,5 +34,5 @@
 ## Notes:
 * I'm assuming the other folders are just the old analysis (the 20% analysis, before we used CoCor instead)
 * Where does `transcripttype.csv` come from?
-* What is the source for all the csv's in `/Original_data_set`?
+* The csv's in `/Original_data_set` are all from Depmap
 * `CCLE_Annotations` is an attempt to complile all data into one dataframe, believe this is for when we have are creating supplmentary figures that include all data for each transcript

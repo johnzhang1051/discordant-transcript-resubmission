@@ -1,6 +1,7 @@
 # Tsoi
 
 * In this folder, we merge the Tsoi transcript-MITF correlations and the CCLE correlations, to ensure that the transcript expression correlations we're seeing are consistent among different datasets
+* We ran Pearson + Spearman correlations on transcript-MITF, filtered to only correlations >=0.5, then merged with the CCLE discordant transcripts
 * This increases confidence that our results aren't due to random occurences weird expression data
 
 ## This folder has the following steps:
@@ -18,7 +19,5 @@
 
 
 ## Notes:
-* I'm not sure what the results in this folder are used for
-* For example, `final_MITF_correlated.csv` is not used anywhere else I can find
-* I'm guessing that `CCLE_Tsoi_discordant_protein_coding.csv` is the final result, and is used in:
+* `CCLE_Tsoi_discordant_protein_coding.csv` is the final result, and is used in:
   * `siMITF/siMITF_no_filtering.R`, but the file is renamed as `discordant.csv`
