@@ -121,5 +121,4 @@ library(dplyr)
 overlap_transcripts <- inner_join(cor_selected, CCLE_discordant, by = "transcript_id")
 
 # Step 2: Save the overlap
-write.csv(overlap_transcripts, "overlap_cor_CCLE_discordant.csv", row.names = FALSE)
-
+write.csv(overlap_transcripts, "CCLE_Tsoi_discordant_protein_coding.csv", row.names = FALSE)

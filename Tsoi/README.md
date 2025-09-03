@@ -12,9 +12,11 @@
   * Filter to correlations > 0.5
   * Inner join with discordant transcripts from CCLE (`/CoCor_analysis/CoCor_CCLE.R`)
 2. In `MITF_correlated_final.R`
-  * We merge the filtered Tsoi correlation data with the CCLE data
-  * Then filter to protein-coding transcripts only
-  * Inner join with discordant transcripts from CCLE (`/CoCor_analysis/CoCor_CCLE.R`)
+  * We take the Tsoi transcripts with MITF-correlation >= 0.5
+  * Merge it with correlations from CCLE transcripts
+  * Filter to only CCLE transcripts with correlation >= 0.5
+  * Filter to only protein-encoding transcripts
+  * Export as `final_MITF_correlated.csv`
 3. Export final data as `CCLE_Tsoi_discordant_protein_coding.csv`, 
 
 

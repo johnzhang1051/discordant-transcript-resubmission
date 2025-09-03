@@ -15,6 +15,7 @@ Re-organized code for paper identifying MITF regulated transcript isoforms
       * Melanoma_models - **not used anywhere?**
 2. NEWEST_CCLE:
    * Clean data
+   * Filter to protein coding transcripts
    * Generate correlation values (pearson + spearman) for transcripts correlated with MITF (>= 0.5)
 3. Tsoi:
    * Using Tsoi datasets

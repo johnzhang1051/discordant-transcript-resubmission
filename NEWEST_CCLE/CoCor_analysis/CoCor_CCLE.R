@@ -221,3 +221,4 @@ CoCor_final_protein_coding <- merged_transcripts %>%
   left_join(transcript_type, by = "transcript_ID") %>%
   filter(transcript_type == "protein_coding")
 
+write.csv(CoCor_final_protein_coding, "CoCor_final_list_protein_coding.csv")
