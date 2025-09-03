@@ -1,6 +1,7 @@
 # NEWEST__CCLE
 
 * This folder contains the R files and original datasets used to identify discordant transcripts in **CCLE data**
+* I've also integrated in the Tsoi scripts, so that they all use the same datasets
 * Specifically, we clean data, run correlation analyses, and test significance between correlation values
 
 ## This folder has the following steps:
