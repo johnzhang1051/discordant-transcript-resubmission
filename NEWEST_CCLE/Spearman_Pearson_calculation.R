@@ -1,13 +1,13 @@
 library(data.table)
 library(dplyr)
-Gene <- fread("Cleaned_data_sets/Gene_expression_melanoma.csv")
-Transcript <- fread("Cleaned_data_sets/Transcript_expression_melanoma_log2.csv")
+Gene <- fread("CoCor_Data_sets/Cleaned_Data/Gene_expression_melanoma.csv")
+Transcript <- fread("CoCor_Data_sets/Cleaned_Data/Transcript_expression_melanoma_log2.csv")
 ### # Remove all rows where Sample_ID is "ACH-000931"as this is a duplicate in transcripts as has two different set of values
 Transcript <- Transcript[Transcript$Sample_ID != "ACH-000931", ]
 Gene <- Gene[Gene$Sample_ID != "ACH-000931", ]
 
 
-transcript_type <-read.csv("Cleaned_data_sets/transcripttype.csv")
+transcript_type <-read.csv("CoCor_Data_sets/Cleaned_Data/transcripttype.csv")
 
 
 ## MITF-M ENST00000394351
@@ -58,8 +58,8 @@ head(cor_trans_spearman[order(-abs(cor_trans_spearman$Correlation)), ])
 
 
 # Optional: Save to CSV
-write.csv(cor_trans_spearman, "Transcript_Spearman_ENST00000394351.csv", row.names = FALSE)
-write.csv(cor_trans_pearson,  "Transcript_Pearson_ENST00000394351.csv",  row.names = FALSE)
+write.csv(cor_trans_spearman, "PearsonSpearman_CCLE/Transcript_Spearman_ENST00000394351.csv", row.names = FALSE)
+write.csv(cor_trans_pearson,  "PearsonSpearman_CCLE/Transcript_Pearson_ENST00000394351.csv",  row.names = FALSE)
 ## subset protein coding and resave
 # Ensure IDs are characters
 transcript_type$ID <- as.character(transcript_type$ID)
@@ -79,8 +79,8 @@ cor_trans_pearson_pc <- cor_trans_pearson %>%
   filter(ID %in% protein_coding_ids)
 
 # Save filtered results
-write.csv(cor_trans_spearman_pc, "cor_trans_spearman_protein_coding.csv", row.names = FALSE)
-write.csv(cor_trans_pearson_pc,  "cor_trans_pearson_protein_coding.csv", row.names = FALSE)
+write.csv(cor_trans_spearman_pc, "PearsonSpearman_CCLE/cor_trans_spearman_protein_coding.csv", row.names = FALSE)
+write.csv(cor_trans_pearson_pc,  "PearsonSpearman_CCLE/cor_trans_pearson_protein_coding.csv", row.names = FALSE)
 # Remove rows with NA in Correlation column
 cor_trans_spearman_pc_clean <- cor_trans_spearman_pc %>%
   filter(!is.na(Correlation))
@@ -89,8 +89,8 @@ cor_trans_pearson_pc_clean <- cor_trans_pearson_pc %>%
   filter(!is.na(Correlation))
 
 # Save cleaned data frames
-write.csv(cor_trans_spearman_pc_clean, "cor_trans_spearman_protein_coding_clean.csv", row.names = FALSE)
-write.csv(cor_trans_pearson_pc_clean,  "cor_trans_pearson_protein_coding_clean.csv", row.names = FALSE)
+write.csv(cor_trans_spearman_pc_clean, "PearsonSpearman_CCLE/cor_trans_spearman_protein_coding_clean.csv", row.names = FALSE)
+write.csv(cor_trans_pearson_pc_clean,  "PearsonSpearman_CCLE/cor_trans_pearson_protein_coding_clean.csv", row.names = FALSE)
 
 
 ##

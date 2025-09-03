@@ -25,7 +25,7 @@ transcript_gene_map <- getBM(
 # Optional: rename columns
 colnames(transcript_gene_map) <- c("transcript_ID", "Gene")
 # Save to CSV if needed
-write.csv(transcript_gene_map, "human_transcript_gene_map.csv", row.names = FALSE)
+write.csv(transcript_gene_map, "PearsonSpearman_CCLE_clean/human_transcript_gene_map.csv", row.names = FALSE)
 
 
 
@@ -72,5 +72,5 @@ Spearman_transcript_clean <- Spearman_transcript %>%
   drop_na()
 
 # Save to CSV
-write.csv(Pearson_transcript_clean, "Pearson_transcript_clean.csv", row.names = FALSE)
-write.csv(Spearman_transcript_clean, "Spearman_transcript_clean.csv", row.names = FALSE)
+write.csv(Pearson_transcript_clean, "PearsonSpearman_CCLE_clean/Pearson_transcript_clean.csv", row.names = FALSE)
+write.csv(Spearman_transcript_clean, "PearsonSpearman_CCLE_clean/Spearman_transcript_clean.csv", row.names = FALSE)

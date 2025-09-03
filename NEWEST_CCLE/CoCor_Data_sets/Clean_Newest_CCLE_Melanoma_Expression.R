@@ -2,12 +2,12 @@ library(data.table)
 
 
 ## import and 
-Melanoma_ID <- read.csv("Melanoma_Sample_ID.csv")
-Transcript_expression <- fread("OmicsExpressionTranscriptsExpectedCountProfile.csv")
-Gene_expression <- fread("OmicsExpressionProteinCodingGenesTPMLogp1BatchCorrected.csv")
+Melanoma_ID <- read.csv("Original_Data/Melanoma_Sample_ID.csv")
+Transcript_expression <- fread("Original_Data/OmicsExpressionTranscriptsExpectedCountProfile.csv")
+Gene_expression <- fread("Original_Data/OmicsExpressionProteinCodingGenesTPMLogp1BatchCorrected.csv")
 colnames(Gene_expression)[1] <- "Sample_ID"
 colnames(Transcript_expression)[1] <- "Profile_ID"
-Profile_to_sample <- read.csv("Profile_Sample_ID.csv")
+Profile_to_sample <- read.csv("Original_Data/Profile_Sample_ID.csv")
 
 ## replace profile_ID for Sample_ID
 library(dplyr)
@@ -85,10 +85,10 @@ colnames(Gene_expression_melanoma) <- c(first_col, clean_gene_names)
 
 ## Save_Cleaned_Data_sets
 # Step 1: Save Gene_expression_melanoma
-write.csv(Gene_expression_melanoma, "Gene_expression_melanoma.csv", row.names = FALSE)
+write.csv(Gene_expression_melanoma, "Cleaned_Data/Gene_expression_melanoma.csv", row.names = FALSE)
 
 # Step 2: Save Transcript_expression_melanoma
-write.csv(Transcript_expression_melanoma, "Transcript_expression_melanoma.csv", row.names = FALSE)
+write.csv(Transcript_expression_melanoma, "Cleaned_Data/Transcript_expression_melanoma.csv", row.names = FALSE)
 
 # Step 3: Create log2(x + 1) normalized version of Transcript_expression_melanoma
 
@@ -96,9 +96,14 @@ write.csv(Transcript_expression_melanoma, "Transcript_expression_melanoma.csv", 
 Transcript_expression_numeric <- Transcript_expression_melanoma[-1, ]
 Transcript_expression_numeric[, -1] <- lapply(Transcript_expression_numeric[, -1], as.numeric)
 
+# ADD THESE 2-3 LINES FOR FILTERING TRANSCRIPTS WITH >10 counts in ≥25% of melanoma samples (JZ):
+n_samples <- nrow(Transcript_expression_numeric)
+keep_transcripts <- sapply(Transcript_expression_numeric[, -1], function(x) sum(x > 10, na.rm = TRUE) >= ceiling(0.25 * n_samples))
+Transcript_expression_numeric <- Transcript_expression_numeric[, c(TRUE, keep_transcripts)]
+
 # Apply log2(x + 1)
 Transcript_expression_log2 <- Transcript_expression_numeric
 Transcript_expression_log2[, -1] <- log2(Transcript_expression_numeric[, -1] + 1)
 
 # Save normalized version
-write.csv(Transcript_expression_log2, "Transcript_expression_melanoma_log2.csv", row.names = FALSE)
+write.csv(Transcript_expression_log2, "Cleaned_Data/Transcript_expression_melanoma_log2.csv", row.names = FALSE)

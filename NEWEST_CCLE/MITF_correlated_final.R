@@ -1,12 +1,12 @@
 ### transcripts with 0.5 correlation in TSOI
-Tsoi_0.5 <- read.csv("Data_final_MITF_Correlation/correlated_transcripts_r0.5.csv")
+Tsoi_0.5 <- read.csv("Tsoi/correlated_transcripts_r0.5.csv")
 colnames(Tsoi_0.5)[1:3] <- c("transcript_ID", "Pearson_Tsoi", "Spearman_Tsoi")
 
 
 ### transcripts with 0.5 and CoCor significance in CCLE
-CCLE_Spearman <- read.csv("Data_final_MITF_Correlation/CCLE_Spearman_transcript_clean.csv")
+CCLE_Spearman <- read.csv("PearsonSpearman_CCLE_clean/Spearman_transcript_clean.csv")
 colnames(CCLE_Spearman)[2] <- ("Spearman_CCLE")
-CCLE_Pearson <- read.csv("Data_final_MITF_Correlation/CCLE_Pearson_transcript_clean.csv")
+CCLE_Pearson <- read.csv("PearsonSpearman_CCLE_clean/Pearson_transcript_clean.csv")
 colnames(CCLE_Pearson)[2] <- ("Pearson_CCLE")
 ### final MITF correlated list
 
@@ -24,7 +24,7 @@ final_filtered_0.5 <- tsoi_full_merged[
 # View result
 head(final_filtered_0.5)
 
-transcript_type <- read.csv("Data_final_MITF_Correlation/transcripttype.csv")
+transcript_type <- read.csv("CoCor_Data_sets/Cleaned_Data/transcripttype.csv")
 
 library(dplyr)
 

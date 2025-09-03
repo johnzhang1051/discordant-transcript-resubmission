@@ -43,24 +43,29 @@ library(tibble)
 # Step 6: Extract and save gene-level counts
 gene_counts <- as.data.frame(txi_gene$counts) %>%
   rownames_to_column("gene_id")
-write.csv(gene_counts, "kallisto_gene_counts.csv", row.names = FALSE)
+write.csv(gene_counts, "Tsoi/kallisto_gene_counts.csv", row.names = FALSE)
 
 # Step 7: Extract and save transcript-level counts
 transcript_counts <- as.data.frame(txi_tx$counts) %>%
   rownames_to_column("transcript_id")
-write.csv(transcript_counts, "kallisto_transcript_counts.csv", row.names = FALSE)
+write.csv(transcript_counts, "Tsoi/kallisto_transcript_counts.csv", row.names = FALSE)
 
 # Optional: Save TPMs too
 gene_tpm <- as.data.frame(txi_gene$abundance) %>%
   rownames_to_column("gene_id")
 gene_tpm$gene_id <- sub("\\..*", "", gene_tpm$gene_id)
-write.csv(gene_tpm, "kallisto_gene_TPM.csv", row.names = FALSE)
+write.csv(gene_tpm, "Tsoi/kallisto_gene_TPM.csv", row.names = FALSE)
 
 transcript_tpm <- as.data.frame(txi_tx$abundance) %>%
   rownames_to_column("transcript_id")
 # Trim version numbers (remove everything after the first ".")
 transcript_tpm$transcript_id <- sub("\\..*", "", transcript_tpm$transcript_id)
-write.csv(transcript_tpm, "kallisto_transcript_TPM.csv", row.names = FALSE)
+write.csv(transcript_tpm, "Tsoi/kallisto_transcript_TPM.csv", row.names = FALSE)
+
+####### START HERE JZ ######
+setwd("/Users/johnz/Documents/GitFiles/discordant-transcript-resubmission/NEWEST_CCLE")
+transcript_tpm <- read.csv("Tsoi/kallisto_transcript_TPM.csv")
+transcript_tpm$transcript_id <- sub("\\..*", "", transcript_tpm$transcript_id)
 
 
 ### spearman and pearson
@@ -97,19 +102,20 @@ cor_results <- data.frame(
 )
 
 # Step 5: Save to CSV
-write.csv(cor_results, "correlation_to_ENST00000394351.csv", row.names = FALSE)
+write.csv(cor_results, "Tsoi/correlation_to_ENST00000394351.csv", row.names = FALSE)
 
 # Step 6: Filter for Pearson ≥ 0.5 OR Spearman ≥ 0.5
 cor_selected <- cor_results %>%
   dplyr::filter(Pearson >= 0.5 | Spearman >= 0.5)
 
 # Step 7: Save selected transcripts
-write.csv(cor_selected, "correlated_transcripts_r0.5.csv", row.names = FALSE)
+write.csv(cor_selected, "Tsoi/correlated_transcripts_r0.5.csv", row.names = FALSE)
 
 # Optional: Extract just the list of transcript IDs
 writeLines(cor_selected$transcript_id, "transcript_ids_r0.5.txt")
 
-CCLE_discordant <- read.csv("CoCor_final_list_protein_coding copy.csv")
+CCLE_discordant <- read.csv("CoCor_analysis/CoCor_final_list_protein_coding.csv")
+colnames(CCLE_discordant)[2] <- "transcript_id"
 
 library(dplyr)
 
@@ -121,4 +127,4 @@ library(dplyr)
 overlap_transcripts <- inner_join(cor_selected, CCLE_discordant, by = "transcript_id")
 
 # Step 2: Save the overlap
-write.csv(overlap_transcripts, "CCLE_Tsoi_discordant_protein_coding.csv", row.names = FALSE)
+write.csv(overlap_transcripts, "Tsoi/CCLE_Tsoi_discordant_protein_coding.csv", row.names = FALSE)
