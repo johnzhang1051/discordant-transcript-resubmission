@@ -26,26 +26,20 @@ Re-organized code for paper identifying MITF regulated transcript isoforms
    * Use CoCor to find only transcripts where transcript-MITF correlation showed a stastically significant stronger correlation than the gene-MITF correlation
    * This results in our list of get discordant transcripts
 5. Create Supplementary Figures and Files:
+   * Figure 1:
+      * A subset of transcripts in melanoma have high correlation with MITF, while the parent genes of the same transcripts show lower correlation with MITF
+   * Figure 2:
+      * Discordantly correlated transcripts are enriched for features associated with MITF regulation and are more likely to be associated with a unique promoter
    * Supplementary Table 1:
       * Fully annotated dataset of all MITF-regulated transcript features
    * Supplementary Figure 1:
       * Outline of transcript filtering strategy
    * Supplementary Figure 2:
-      * Expression enrichment in melanoma
+      * Expression of discordantly correlated genes is enriched in melanoma
    * Supplementary Figure 3:
       * Gene Ontology and pathway analysis
    * Supplementary Figure 4:
-      * Expression level comparison
-      * Distribution of expression levels across transcript groups
-   * Supplementary Figure 5:
-      * Multi-dataset ChIP-seq comparison
-   * Supplementary Figure 6:
-      * Knockdown validation across 4 datasets
-    * Supplementary Figure 7:
-      * Overexpression validation
-    * Supplementary Figure 8:
-      * qPCR validation results
-      * Bar plots showing transcript-specific vs gene-level responses
+      * Discordantly correlated transcript group has lower average expression in CCLE melanoma as compared to MITF correlated transcripts
    * Supplementary File 1:
       * Complete dataset for computational analysis
       * All transcript features, analysis results, intermediate calculations
