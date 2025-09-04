@@ -6,14 +6,7 @@
   * GSE163646
   * Henja
   * GSE283655
-
-## This folder has the following steps:
-
-1. In `siMITF_no_filtering.R`
-
-
-## Notes:
-* I'm not sure what the results in this folder are used for
-* For example, `final_MITF_correlated.csv` is not used anywhere else I can find
-* I'm guessing that `CCLE_Tsoi_discordant_protein_coding.csv` is the final result, and is used in:
-  * `siMITF/siMITF_no_filtering.R`, but the file is renamed as `discordant.csv`
+* We split each dataset into knockdown/siMITF and control
+* Then, we determine what the difference is with: code such as `PRJEB30337_siMITF_mean / PRJEB30337_CON_mean`
+* Finally, for each group of transcripts (discordant, correlated, and all protein-coding), we see whether discordant transcripts increase more than the other groups
+* Used in figure 1

@@ -26,30 +26,6 @@ GSE283655_siMITF  <- c("SRR31631252",	"SRR31631256", "SRR31631260")
 Henja_con <- c("SSRR7346993", "SRR7346994")
 Henja_siMITF  <- c("SRR7346991", "SRR7346992")
 
-# Load and clean input
-PRJEB30337 <- read.csv("Data/PRJEB30337_TPM.csv")
-GSE163646  <- read.csv("Data/GSE_163646_kallisto_transcript_TPM.csv")
-Henja      <- read.csv("Data/Henja_TPM.csv")
-GSE283655  <- read.csv("Data/GSE283655_kallisto_transcript_TPM.csv")
-
-# Trim version suffix from transcript_id
-Henja$transcript_id       <- sub("\\.\\d+$", "", Henja$transcript_id)
-PRJEB30337$transcript_id  <- sub("\\.\\d+$", "", PRJEB30337$transcript_id)
-
-# Merge all
-merged_siMITF <- Reduce(function(x, y) merge(x, y, by = "transcript_id", all = TRUE),
-                        list(PRJEB30337, GSE163646, Henja, GSE283655))
-
-# Define sample groups
-PRJEB30337_con     <- c("ERR3013912", "ERR3013913")
-PRJEB30337_siMITF  <- c("ERR3013908", "ERR3013909")
-GSE163646_CON      <- c("SRR13282348", "SRR13282350")
-GSE163646_siMITF   <- c("SRR13282352", "SRR13282353")
-GSE283655_con      <- c("SRR31631254", "SRR31631258", "SRR31631262")
-GSE283655_siMITF   <- c("SRR31631252", "SRR31631256", "SRR31631260")
-Henja_con          <- c("SRR7346993", "SRR7346994")
-Henja_siMITF       <- c("SRR7346991", "SRR7346992")
-
 # Calculate mean TPM per group
 mean_expr_df <- merged_siMITF %>%
   mutate(
