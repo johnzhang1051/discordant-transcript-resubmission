@@ -1,4 +1,3 @@
-setwd("/Users/johnz/Documents/GitFiles/discordant-transcript-resubmission/NEWEST_CCLE/CoCor_Data_sets")
 library(data.table)
 
 
