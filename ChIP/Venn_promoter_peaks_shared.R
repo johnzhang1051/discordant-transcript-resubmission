@@ -6,8 +6,8 @@ Louph <- read.csv("Data/Louphrasitthiphol.csv")
 # One-time fix: clean column name and remove version suffix
 standardize_transcripts <- function(df) {
   df %>%
-    rename(transcript_id = transcriptId) %>%
-    mutate(transcript_id = sub("\\.\\d+$", "", transcript_id))
+    dplyr::rename(transcript_id = transcriptId) %>%
+    dplyr::mutate(transcript_id = sub("\\.\\d+$", "", transcript_id))
 }
 
 Kenny <- standardize_transcripts(Kenny)
@@ -21,8 +21,8 @@ Louph <- standardize_transcripts(Louph)
 library(dplyr)
 filter_promoters <- function(df) {
   df %>%
-    filter(annotation == "Promoter (<=1kb)") %>%
-    select(transcript_id, annotation)
+    dplyr::filter(annotation == "Promoter (<=1kb)") %>%
+    dplyr::select(transcript_id, annotation)
 }
 
 # Apply to each dataset
@@ -36,7 +36,7 @@ library(stringr)
 clean_transcripts <- function(df) {
   df %>%
                             # Rename column
-    mutate(transcript_id = str_replace(transcript_id, "\\.\\d+$", ""))  # Remove .1 or .23 at the end
+    dplyr::mutate(transcript_id = str_replace(transcript_id, "\\.\\d+$", ""))  # Remove .1 or .23 at the end
 }
 
 # Apply to each promoter data frame
@@ -48,7 +48,6 @@ Louph_promoters <- clean_transcripts(Louph_promoters)
 
 
 
-install.packages("VennDiagram")
 library(VennDiagram)
 
 venn.plot <- venn.diagram(
@@ -73,9 +72,9 @@ grid::grid.newpage()
 grid::grid.draw(venn.plot)
 
 
-protein_coding <- read.csv("Data/protein_coding.csv")
-transcript_unique <- read.csv("Data/discordant.csv")
-transcript_correlation_all <-read.csv("Data/correlated.csv")
+protein_coding <- read.csv("Data/protein_coding_RESUBMISSION.csv")
+transcript_unique <- read.csv("Data/discordant_RESUBMISSION.csv")
+transcript_correlation_all <-read.csv("Data/correlated_RESUBMISSION.csv")
 transcript_correlation_all <- transcript_correlation_all %>%
   filter(!(transcript_id %in% transcript_unique$transcript_id))
 
@@ -195,16 +194,16 @@ filter_promoter_window <- function(df, max_kb) {
 # Wrapper to calculate proportions for a given window
 get_all_stats_by_window <- function(max_kb, label_suffix) {
   kenny <- filter_promoter_window(Kenny, max_kb) %>%
-    select(transcript_id) %>%
-    mutate(dataset = "Kenny")
+    dplyr::select(transcript_id) %>%
+    dplyr::mutate(dataset = "Kenny")
   
   laurette <- filter_promoter_window(Laurette, max_kb) %>%
-    select(transcript_id) %>%
-    mutate(dataset = "Laurette")
+    dplyr::select(transcript_id) %>%
+    dplyr::mutate(dataset = "Laurette")
   
   louph <- filter_promoter_window(Louph, max_kb) %>%
-    select(transcript_id) %>%
-    mutate(dataset = "Louph")
+    dplyr::select(transcript_id) %>%
+    dplyr::mutate(dataset = "Louph")
   
   # Compute stats
   transcript_sets <- list(
@@ -288,11 +287,11 @@ ggplot(any_peak_stats_all, aes(x = group, y = proportion, fill = group)) +
 ### plot peak within first 3 kb
 # Filter by <=3kb window
 kenny_3kb <- filter_promoter_window(Kenny, 3) %>%
-  select(transcript_id)
+  dplyr::select(transcript_id)
 laurette_3kb <- filter_promoter_window(Laurette, 3) %>%
-  select(transcript_id)
+  dplyr::select(transcript_id)
 louph_3kb <- filter_promoter_window(Louph, 3) %>%
-  select(transcript_id)
+  dplyr::select(transcript_id)
 
 # Define transcript groups again
 transcript_sets <- list(
@@ -365,7 +364,7 @@ unique_shared_in_all <- transcript_unique$transcript_id[
 print(unique_shared_in_all)
 
 # Optional: save to CSV
-write.csv(unique_shared_in_all, "unique_transcripts_with_peak_in_all_three.csv", row.names = FALSE)
+write.csv(unique_shared_in_all, "chip_results/unique_transcripts_with_peak_in_all_three.csv", row.names = FALSE)
 
 
 ###any two data sets
@@ -404,4 +403,4 @@ peak_counts_df <- transcript_unique %>%
 head(peak_counts_df)
 
 # Save to CSV
-write.csv(peak_counts_df, "Transcript_peak_counts_per_dataset.csv", row.names = FALSE)
+write.csv(peak_counts_df, "chip_results/Transcript_peak_counts_per_dataset.csv", row.names = FALSE)
