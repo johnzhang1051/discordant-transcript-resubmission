@@ -63,7 +63,6 @@ transcript_tpm$transcript_id <- sub("\\..*", "", transcript_tpm$transcript_id)
 write.csv(transcript_tpm, "Tsoi/kallisto_transcript_TPM.csv", row.names = FALSE)
 
 ####### START HERE JZ ######
-setwd("/Users/johnz/Documents/GitFiles/discordant-transcript-resubmission/NEWEST_CCLE")
 transcript_tpm <- read.csv("Tsoi/kallisto_transcript_TPM.csv")
 transcript_tpm$transcript_id <- sub("\\..*", "", transcript_tpm$transcript_id)
 
@@ -128,3 +127,4 @@ overlap_transcripts <- inner_join(cor_selected, CCLE_discordant, by = "transcrip
 
 # Step 2: Save the overlap
 write.csv(overlap_transcripts, "Tsoi/CCLE_Tsoi_discordant_protein_coding.csv", row.names = FALSE)
+write.csv(overlap_transcripts, "Filter_low_expressed/data/CCLE_Tsoi_discordant_protein_coding.csv", row.names = FALSE)

@@ -93,7 +93,7 @@ run_cocor_test <- function(trans_id, gene_id, y_vec) {
 
 # Apply function to all valid transcript-gene pairs
 results <- purrr::pmap_dfr(
-  valid_pairs %>% select(transcript_ID, Gene),
+  valid_pairs %>% dplyr::select(transcript_ID, Gene),
   function(transcript_ID, Gene) run_cocor_test(transcript_ID, Gene, y)
 )
 
@@ -171,7 +171,7 @@ run_cocor_test_spearman <- function(trans_id, gene_id, y_vec) {
 }
 
 results_spearman <- purrr::pmap_dfr(
-  valid_pairs %>% select(transcript_ID, Gene),
+  valid_pairs %>% dplyr::select(transcript_ID, Gene),
   function(transcript_ID, Gene) run_cocor_test_spearman(transcript_ID, Gene, y)
 )
 
@@ -211,7 +211,7 @@ merged_transcripts <- bind_rows(
 write.csv(merged_transcripts, "CoCor_analysis/cocor_CCLE_final_list.csv")
 
 
-transcript_type <- read.csv("CoCor_Data_sets/Cleaned_Data//transcripttype.csv")
+transcript_type <- read.csv("CoCor_Data_sets/Cleaned_Data/transcripttype.csv")
 
 # Ensure dplyr is loaded
 library(dplyr)

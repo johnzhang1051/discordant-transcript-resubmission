@@ -20,7 +20,7 @@ colnames(Transcript_expression)[1] <- "Profile_ID"
 Transcript_expression <- left_join(Transcript_expression, Profile_to_sample, by = "Profile_ID")
 # Step 3: Move Sample_ID to the first column
 Transcript_expression <- Transcript_expression %>%
-  select(Sample_ID, everything(), -Profile_ID)
+  dplyr::select(Sample_ID, everything(), -Profile_ID)
 # Step 4 (Optional): Rename Sample_ID to be the new first column name
 colnames(Transcript_expression)[1] <- "Sample_ID"
 
@@ -97,9 +97,9 @@ Transcript_expression_numeric <- Transcript_expression_melanoma[-1, ]
 Transcript_expression_numeric[, -1] <- lapply(Transcript_expression_numeric[, -1], as.numeric)
 
 # ADD THESE 2-3 LINES FOR FILTERING TRANSCRIPTS WITH >10 counts in ≥25% of melanoma samples (JZ):
-n_samples <- nrow(Transcript_expression_numeric)
-keep_transcripts <- sapply(Transcript_expression_numeric[, -1], function(x) sum(x > 10, na.rm = TRUE) >= ceiling(0.25 * n_samples))
-Transcript_expression_numeric <- Transcript_expression_numeric[, c(TRUE, keep_transcripts)]
+# n_samples <- nrow(Transcript_expression_numeric)
+# keep_transcripts <- sapply(Transcript_expression_numeric[, -1], function(x) sum(x > 10, na.rm = TRUE) >= ceiling(0.25 * n_samples))
+# Transcript_expression_numeric <- Transcript_expression_numeric[, c(TRUE, keep_transcripts)]
 
 # Apply log2(x + 1)
 Transcript_expression_log2 <- Transcript_expression_numeric

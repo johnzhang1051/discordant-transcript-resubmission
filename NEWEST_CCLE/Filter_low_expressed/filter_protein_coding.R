@@ -3,19 +3,20 @@ library(data.table)
 # Import the large CSV using fread
 Transcript_expression <- fread("Data/Transcript_expression_melanoma.csv")
 
-discordant <- read.csv("Data/protein_coding.csv")
+transcript_type <- read.csv("Data/transcripttype.csv")
 
-library(data.table)
+protein_coding <- transcript_type %>% filter(transcript_type == "protein_coding")
+
 
 # Ensure both are data.tables
 Transcript_expression <- as.data.table(Transcript_expression)
-discordant <- as.data.table(discordant)
+protein_coding <- as.data.table(protein_coding)
 
 # Step 1: Remove gene name row
 Transcript_expression_clean <- Transcript_expression[-1, ]
 
-# Step 2: Keep only the Sample_ID column + transcripts in discordant
-transcript_cols_to_keep <- intersect(names(Transcript_expression_clean), discordant$transcript_id)
+# Step 2: Keep only the Sample_ID column + transcripts in protein_coding
+transcript_cols_to_keep <- intersect(names(Transcript_expression_clean), protein_coding$transcript_id)
 Transcript_expression_subset <- Transcript_expression_clean[, c("Sample_ID", transcript_cols_to_keep), with = FALSE]
 
 # Step 3: Convert transcript columns to numeric
@@ -31,10 +32,10 @@ expr_t[, transcript_id := transcript_cols_to_keep]  # add transcript_id
 n_samples <- ncol(expr_t) - 1
 expr_t[, pass_25pct := rowSums(.SD > 10, na.rm = TRUE) >= ceiling(0.25 * n_samples), .SDcols = 1:n_samples]
 
-# Step 6: Merge with discordant
-filtered_discordant <- merge(discordant, expr_t[, .(transcript_id, pass_25pct)], by = "transcript_id", all.x = TRUE)
+# Step 6: Merge with protein_coding
+filtered_protein_coding <- merge(protein_coding, expr_t[, .(transcript_id, pass_25pct)], by = "transcript_id", all.x = TRUE)
 
 # Step 7: Keep only passing
-discordant_filtered <- filtered_discordant[pass_25pct == TRUE]
+protein_coding_filtered <- filtered_protein_coding[pass_25pct == TRUE]
 
-write.csv(discordant_filtered, "protein_coding_PAPER.csv")
+write.csv(protein_coding_filtered, "final_paper_lists/protein_coding_RESUBMISSION.csv")

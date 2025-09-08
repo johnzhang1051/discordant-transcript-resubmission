@@ -39,5 +39,6 @@ final_filtered_protein_coding <- merged_df %>%
 # View result
 head(final_filtered_protein_coding)
 
-write.csv(final_filtered_protein_coding, "final_MITF_correlated.csv")
+write.csv(final_filtered_protein_coding, "final_MITF_correlated.csv", row.names = FALSE)
+write.csv(final_filtered_protein_coding, "Filter_low_expressed/data/final_MITF_correlated.csv", row.names = FALSE)
 
