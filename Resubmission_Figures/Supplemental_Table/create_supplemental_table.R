@@ -1,4 +1,3 @@
-# Minimal imports - dplyr includes most of what we need
 library(dplyr)
 library(data.table)
 library(tidyr)
@@ -87,26 +86,25 @@ comprehensive_dataset$data_source <- case_when(
   TRUE ~ "Unknown"
 )
 
-
-# Step 9: Add classification flags
+# Step 7: Add classification flags
 comprehensive_dataset$is_discordant <- comprehensive_dataset$transcript_id %in% discordant_list$transcript_id
 comprehensive_dataset$is_correlated <- comprehensive_dataset$transcript_id %in% correlated_list$transcript_id
 comprehensive_dataset$is_protein_coding_filtered <- comprehensive_dataset$transcript_id %in% protein_coding_filtered$transcript_id
 
-# Step 10: Add combined FDR (use the more significant one from CCLE analyses)
+# Step 8: Add combined FDR (use the more significant one from CCLE analyses)
 comprehensive_dataset$fdr <- pmin(comprehensive_dataset$ccle_pearson_fdr, 
                                   comprehensive_dataset$ccle_spearman_fdr, 
                                   na.rm = TRUE)
 
-# Step 11: Add count information (mean expression across samples)
-count_info <- transcript_expression_clean %>%
+# Step 9: Add count information (mean expression across samples)
+count_info <- transcript_expression %>%
   summarise_at(vars(-Sample_ID), mean, na.rm = TRUE) %>%
   pivot_longer(everything(), names_to = "transcript_id", values_to = "mean_counts")
 
 comprehensive_dataset <- left_join(comprehensive_dataset, count_info, by = "transcript_id")
 comprehensive_dataset$counts <- comprehensive_dataset$mean_counts
 
-# Step 12: Add ChIP-seq peak information
+# Step 10: Add ChIP-seq peak information
 # Load and process ChIP-seq data (from your existing code)
 Kenny <- read.csv("data/chip/Kenny.csv")
 Laurette <- read.csv("data/chip/Laurette.csv")
@@ -152,7 +150,7 @@ comprehensive_dataset$total_chip_peaks <- as.integer(comprehensive_dataset$kenny
   as.integer(comprehensive_dataset$laurette_peak) + 
   as.integer(comprehensive_dataset$louph_peak)
 
-# Step 13: Add MITF Overexpression values
+# Step 11: Add MITF Overexpression values
 # Load overexpression datasets
 GSE163646 <- read.csv("data/mitf_oe/GSE_163646_OE_kallisto_transcript_TPM.csv")
 PRJNA704810 <- read.csv("data/mitf_oe/PRJNA704810_OE_kallisto_transcript_TPM.csv")
@@ -197,7 +195,7 @@ overexpression_data <- ratio_df %>%
 # Merge with comprehensive dataset
 comprehensive_dataset <- left_join(comprehensive_dataset, overexpression_data, by = "transcript_id")
 
-# Step 13: Clean up and reorder columns
+# Step 12: Clean up and reorder columns
 final_columns <- c(
   "transcript_id",
   "data_source",
@@ -232,23 +230,5 @@ for (col in missing_cols) {
 # Reorder to match desired order
 comprehensive_dataset_final <- comprehensive_dataset_final[, final_columns]
 
-# Step 14: Save complete dataset
+# Step 13: Save complete dataset
 write.csv(comprehensive_dataset_final, "comprehensive_transcript_dataset.csv", row.names = FALSE)
-
-# Step 15: Create filtered versions for paper
-# Correlated + Discordant only
-paper_dataset <- comprehensive_dataset_final %>%
-  filter(is_correlated == TRUE | is_discordant == TRUE)
-
-write.csv(paper_dataset, "final_paper_lists/paper_transcript_dataset.csv", row.names = FALSE)
-
-# Step 16: Summary statistics
-cat("=== Dataset Summary ===\n")
-cat("Total transcripts:", nrow(comprehensive_dataset_final), "\n")
-cat("Discordant transcripts:", sum(comprehensive_dataset_final$is_discordant, na.rm = TRUE), "\n") 
-cat("Correlated transcripts:", sum(comprehensive_dataset_final$is_correlated, na.rm = TRUE), "\n")
-cat("Protein coding:", sum(comprehensive_dataset_final$transcript_type == "protein_coding", na.rm = TRUE), "\n")
-cat("Pass filtering:", sum(comprehensive_dataset_final$passes_filtering, na.rm = TRUE), "\n")
-cat("Paper dataset size:", nrow(paper_dataset), "\n")
-
-print("Comprehensive transcript dataset created successfully!")
