@@ -404,3 +404,139 @@ head(peak_counts_df)
 
 # Save to CSV
 write.csv(peak_counts_df, "chip_results/Transcript_peak_counts_per_dataset.csv", row.names = FALSE)
+
+
+
+
+
+################### Figure 2:
+### Number of EBox within 1kB of TSS:
+
+### number of MITF ChIP peak within 1kB of TSS
+all_transcripts_for_counting <- bind_rows(
+  protein_coding %>% select(transcript_id) %>% mutate(source = "protein_coding"),
+  transcript_unique %>% select(transcript_id) %>% mutate(source = "discordant"), 
+  transcript_correlation_all %>% select(transcript_id) %>% mutate(source = "correlated")
+) %>% distinct(transcript_id, .keep_all = TRUE)
+
+peak_counts_per_transcript_fixed <- all_transcripts_for_counting %>%
+  mutate(
+    kenny_peak = as.integer(transcript_id %in% Kenny_promoters$transcript_id),
+    laurette_peak = as.integer(transcript_id %in% Laurette_promoters$transcript_id),
+    louph_peak = as.integer(transcript_id %in% Louph_promoters$transcript_id),
+    total_peaks = kenny_peak + laurette_peak + louph_peak,
+    peak_bin = case_when(
+      total_peaks == 0 ~ "0 peaks",
+      total_peaks == 1 ~ "1 peak", 
+      total_peaks >= 2 ~ "≥2 peaks"
+    )
+  )
+
+# Updated function to use the fixed peak counts
+calc_peak_bin_proportions_fixed <- function(transcript_group, label) {
+  group_with_counts <- transcript_group %>%
+    left_join(peak_counts_per_transcript_fixed, by = "transcript_id") %>%
+    filter(!is.na(peak_bin))
+  
+  group_with_counts %>%
+    count(peak_bin) %>%
+    mutate(
+      group = label,
+      total = sum(n),
+      proportion = n / total
+    )
+}
+
+# Recalculate with proper group names
+peak_bin_stats_fixed <- bind_rows(
+  calc_peak_bin_proportions_fixed(protein_coding, "protein_coding"),
+  calc_peak_bin_proportions_fixed(transcript_unique, "discordant"),
+  calc_peak_bin_proportions_fixed(transcript_correlation_all, "correlated")
+)
+
+# Set factor levels for proper ordering
+peak_bin_stats_fixed$peak_bin <- factor(peak_bin_stats_fixed$peak_bin, 
+                                        levels = c("0 peaks", "1 peak", "≥2 peaks"))
+
+peak_bin_stats_fixed$group <- factor(peak_bin_stats_fixed$group,
+                                     levels = c("protein_coding", "correlated", "discordant"))
+
+# Plot with ordered factors
+ggplot(peak_bin_stats_fixed, aes(x = peak_bin, y = proportion, fill = group)) +
+  geom_bar(stat = "identity", position = position_dodge(width = 0.8), width = 0.7) +
+  labs(
+    title = "Distribution of MITF ChIP Peaks within 1kb of TSS",
+    x = "Number of Peaks",
+    y = "Proportion of Transcripts",
+    fill = "Transcript Group"
+  ) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  theme_minimal(base_size = 14)
+
+### Proportion of transcripts in each group that are associated with a unique promoter:
+library(GenomicRanges)
+# Extract transcript coordinates from Kenny dataset for promoter analysis
+transcript_coords <- Kenny %>%
+  select(transcript_id, seqnames, start, end, strand, geneId) %>%
+  distinct() %>%
+  mutate(
+    # Define promoter as 1kb upstream of TSS
+    promoter_start = ifelse(strand == 1, start - 1000, end),
+    promoter_end = ifelse(strand == 1, start, end + 1000),
+    promoter_start = pmax(1, promoter_start)
+  )
+
+transcript_coords_clean <- transcript_coords %>%
+  select(-start, -end)  # Remove conflicting column names
+
+promoter_gr <- makeGRangesFromDataFrame(
+  transcript_coords_clean,
+  seqnames.field = "seqnames",
+  start.field = "promoter_start", 
+  end.field = "promoter_end",
+  strand.field = "strand",
+  keep.extra.columns = TRUE
+)
+
+# Find overlaps (same pattern as your existing overlap analysis)
+overlaps <- findOverlaps(promoter_gr, promoter_gr)
+overlap_summary <- as.data.frame(overlaps) %>%
+  filter(queryHits != subjectHits) %>%
+  group_by(queryHits) %>%
+  summarise(n_overlaps = n(), .groups = "drop")
+
+# Transcripts with unique (non-overlapping) promoters
+unique_promoter_indices <- setdiff(1:length(promoter_gr), overlap_summary$queryHits)
+unique_promoter_transcripts <- transcript_coords$transcript_id[unique_promoter_indices]
+
+# Function following your existing pattern
+compute_unique_promoter_proportion <- function(transcript_group, label) {
+  overlap_count <- sum(transcript_group$transcript_id %in% unique_promoter_transcripts)
+  total <- nrow(transcript_group)
+  
+  tibble(
+    group = label,
+    with_unique_promoter = overlap_count,
+    total = total,
+    proportion = overlap_count / total
+  )
+}
+
+# Calculate proportions (same pattern as your other analyses)
+unique_promoter_stats <- bind_rows(
+  compute_unique_promoter_proportion(protein_coding, "protein_coding"),
+  compute_unique_promoter_proportion(transcript_unique, "unique"),
+  compute_unique_promoter_proportion(transcript_correlation_all, "correlation")
+)
+
+unique_promoter_stats$group <- factor(unique_promoter_stats$group, levels = c("protein_coding", "correlation", "unique"))
+
+# Plot (same style as your existing plots)
+ggplot(unique_promoter_stats, aes(x = group, y = proportion, fill = group)) +
+  geom_bar(stat = "identity", width = 0.6, show.legend = FALSE) +
+  labs(
+    title = "Proportion of Transcripts with Unique Promoters",
+    x = "Transcript Group",
+    y = "Proportion of Transcripts"
+  ) +
+  theme_minimal(base_size = 14)

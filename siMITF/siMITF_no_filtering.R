@@ -163,25 +163,25 @@ ratio_df_binned4 <- ratio_df_annotated %>%
   mutate(
     PRJEB30337_bin4 = case_when(
       PRJEB30337_ratio <= 0.25 ~ "≤0.25",
-      PRJEB30337_ratio <= 0.5  ~ "0.25–0.5",
+      PRJEB30337_ratio <= 0.5  ~ "0.26–0.5",
       PRJEB30337_ratio <= 1    ~ "0.51–1",
       TRUE                     ~ "≥1"
     ),
     GSE163646_bin4 = case_when(
       GSE163646_ratio <= 0.25 ~ "≤0.25",
-      GSE163646_ratio <= 0.5  ~ "0.25–0.5",
+      GSE163646_ratio <= 0.5  ~ "0.26–0.5",
       GSE163646_ratio <= 1    ~ "0.51–1",
       TRUE                    ~ "≥1"
     ),
     GSE283655_bin4 = case_when(
       GSE283655_ratio <= 0.25 ~ "≤0.25",
-      GSE283655_ratio <= 0.5  ~ "0.25–0.5",
+      GSE283655_ratio <= 0.5  ~ "0.26–0.5",
       GSE283655_ratio <= 1    ~ "0.51–1",
       TRUE                    ~ "≥1"
     ),
     Henja_bin4 = case_when(
       Henja_ratio <= 0.25 ~ "≤0.25",
-      Henja_ratio <= 0.5  ~ "0.25–0.5",
+      Henja_ratio <= 0.5  ~ "0.26–0.5",
       Henja_ratio <= 1    ~ "0.51–1",
       TRUE                ~ "≥1"
     )
@@ -228,7 +228,22 @@ plot_ratio_percent_4(ratio_df_binned4, "GSE283655_bin4",  "GSE283655")
 plot_ratio_percent_4(ratio_df_binned4, "Henja_bin4",      "Henja")
 
 
+# Reshape data to long format
+long_data <- ratio_df_binned4 %>%
+  pivot_longer(cols = ends_with("_bin4"), names_to = "dataset", values_to = "ratio_bin") %>%
+  mutate(dataset = gsub("_bin4", "", dataset))
 
+# Calculate percentages
+plot_data <- long_data %>%
+  count(dataset, group, ratio_bin) %>%
+  group_by(dataset, group) %>%
+  mutate(percent = n / sum(n) * 100)
+
+# Plot
+ggplot(plot_data, aes(x = group, y = percent, fill = ratio_bin)) +
+  geom_bar(stat = "identity") +
+  facet_wrap(~dataset) +
+  theme_minimal()
 
 # Function to run pairwise Fisher's tests for a given bin column
 pairwise_bin_tests <- function(df, bin_col, dataset_name) {
@@ -303,10 +318,6 @@ head(all_results)
 # write.csv(all_results, "pairwise_bin_fisher_results.csv", row.names = FALSE)
 
 
-
-
-library(dplyr)
-library(ggplot2)
 library(tidyr)
 
 # Step 1: Compute log2 ratios
@@ -404,3 +415,83 @@ ggplot(summary_stats, aes(x = group, y = mean_log2, fill = group)) +
             ),
             inherit.aes = FALSE,
             size = 5)
+
+
+
+########## Figure 2:
+
+
+### Boxplot - MITF knockdown effect on transcript expression in each transcript group (all datasets):
+
+# Set factor levels for proper ordering
+log2_long$group <- factor(log2_long$group,
+                          levels = c("protein_coding", "correlated", "discordant"))
+
+# Create boxplot
+ggplot(log2_long, aes(x = group, y = log2_ratio, fill = group)) +
+  geom_boxplot(alpha = 0.7, outlier.size = 0.5) +
+  scale_fill_manual(values = group_colors) +
+  labs(
+    title = "Transcript Expression (siMITF/siCON)",
+    x = "Transcript Group",
+    y = "log2(siMITF / Control)",
+    fill = "Group"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(legend.position = "none") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray50")
+
+### Barplot - MITF knockdown effect on transcript expression in each transcript group (all datasets):
+
+plot_data$group <- factor(plot_data$group,
+                          levels = c("protein_coding", "correlated", "discordant"))
+
+plot_data$ratio_bin <- factor(plot_data$ratio_bin,
+                              levels = c("≤0.25", "0.26–0.5", "0.51–1", "≥1"))
+
+# Create barplot with ratio bins
+ggplot(plot_data, aes(x = group, y = percent, fill = ratio_bin)) +
+  geom_bar(stat = "identity") +
+  facet_wrap(~dataset) +
+  labs(
+    title = "MITF Knockdown Effect by Transcript Group and Ratio Bins",
+    x = "Transcript Group",
+    y = "Percent of Transcripts",
+    fill = "siMITF/Control Ratio"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    strip.text = element_text(face = "bold")
+  )
+
+combined_plot_data <- plot_data %>%
+  group_by(group, ratio_bin) %>%
+  summarise(
+    total_n = sum(n),
+    .groups = "drop"
+  ) %>%
+  group_by(group) %>%
+  mutate(percent = total_n / sum(total_n) * 100)
+
+# Combined across all datasets with dodged bars
+combined_plot_data <- plot_data %>%
+  group_by(group, ratio_bin) %>%
+  summarise(
+    total_n = sum(n),
+    .groups = "drop"
+  ) %>%
+  group_by(group) %>%
+  mutate(percent = total_n / sum(total_n) * 100)
+
+ggplot(combined_plot_data, aes(x = ratio_bin, y = percent, fill = group)) +
+  geom_bar(stat = "identity", position = position_dodge(width = 0.8), width = 0.7) +
+  scale_fill_manual(values = group_colors) +
+  labs(
+    title = "Transcript Expression (siMITF/siCON) (binned)",
+    x = "siMITF/Control Ratio", 
+    y = "Percent of Transcripts",
+    fill = "Transcript Group"
+  ) +
+  theme_minimal(base_size = 14)
+
