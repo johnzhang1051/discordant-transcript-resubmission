@@ -1,7 +1,6 @@
 # discordant-transcript-resubmission
 Re-organized code for paper identifying MITF regulated transcript isoforms
 
-
 # Analysis Flow:
 
 1. NEWEST_CCLE:
@@ -14,18 +13,20 @@ Re-organized code for paper identifying MITF regulated transcript isoforms
       * Model - **not used anywhere?**
       * Melanoma_models - **not used anywhere?**
 2. NEWEST_CCLE:
-   * Clean data
+   * Clean data in `NEWEST_CCLE/CoCor_Data_sets/Clean_Newest_CCLE_Melanoma_Expression.R`
    * Filter to protein coding transcripts
-   * Generate correlation values (pearson + spearman) for transcripts correlated with MITF (>= 0.5)
+   * In `NEWEST_CCLE/CoCor_CCLE.R` generate correlation values (pearson + spearman) for transcripts correlated with MITF (>= 0.5 both), and identify discordant transcripts using CoCor
 3. Tsoi:
-   * Using Tsoi datasets
+   * In `NEWEST_CCLE/CCLE_Tsoi_final_discordant.R`
+   * Import Tsoi datasets
    * Generate correlation values, then filter only to transcripts correlated with MITF (>= 0.5)
-   * Join CCLE correlated transcripts with Tsoi correlated transcripts
+   * Inner join/overlap CCLE discordant transcripts with Tsoi correlated transcripts to make final list
+   * This gives us our pre-filtered lists of discordant transcripts and correlated transcripts
 4. NEWEST_CCLE:
-   * Bring in the joined transcript list from before
-   * Use CoCor to find only transcripts where transcript-MITF correlation showed a stastically significant stronger correlation than the gene-MITF correlation
-   * This results in our list of get discordant transcripts
-5. Create Supplementary Figures and Files:
+   * Run the 3 filter .R scripts in `NEWEST_CCLE/Filter_low_expressed`
+   * That gives us the final 3 lists of transcripts we'll use to make Figures
+5. Resubmission_Figures:
+   * Create Supplementary Figures and Files:
    * Figure 1:
       * A subset of transcripts in melanoma have high correlation with MITF, while the parent genes of the same transcripts show lower correlation with MITF
    * Figure 2:

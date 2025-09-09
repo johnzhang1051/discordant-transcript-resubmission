@@ -1,14 +1,3 @@
-✅ Assumptions:
-  You have a target variable y: a numeric vector of length n_samples.
-
-You have:
-  
-  Transcript: a data frame where rows = samples, column 1 is Sample_ID, remaining columns are transcript expression with column names as transcript_ID.
-
-Gene: same format, but for gene expression.
-
-You have a transcript ↔ gene mapping: Pearson_transcript_gene with transcript_ID, Gene.
-
 library(data.table)
 Pearson_transcript_gene <- read.csv("CoCor_Data_sets/Cleaned_Data/human_transcript_gene_map.csv")
 Transcript <- fread("CoCor_Data_sets/Cleaned_Data//Transcript_expression_melanoma_log2.csv")
@@ -100,13 +89,14 @@ results <- purrr::pmap_dfr(
 # Optional: Filter significant results
 results_filtered <- results %>% filter(!is.na(p_value) & p_value < 0.05)
 
+### add FDR correction
+results <- results %>%
+  mutate(FDR = p.adjust(p_value, method = "BH"))
+
 # Save results
 write.csv(results, "CoCor_analysis/cocor_all_results.csv", row.names = FALSE)
 write.csv(results_filtered, "CoCor_analysis/cocor_significant_results.csv", row.names = FALSE)
 
-### add FDR correction
-results <- results %>%
-  mutate(FDR = p.adjust(p_value, method = "BH"))
 
 results_fdr <- results %>% filter(!is.na(FDR) & FDR < 0.05)
 
