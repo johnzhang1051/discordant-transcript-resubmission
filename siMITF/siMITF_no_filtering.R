@@ -1,5 +1,6 @@
 library(dplyr)
 library(ggplot2)
+library(tidyr)
 
 PRJEB30337 <- read.csv("Data/PRJEB30337_TPM.csv")
 GSE163646 <- read.csv("Data/GSE_163646_kallisto_transcript_TPM.csv")
@@ -317,8 +318,6 @@ head(all_results)
 # Optional: save to CSV
 # write.csv(all_results, "pairwise_bin_fisher_results.csv", row.names = FALSE)
 
-
-library(tidyr)
 
 # Step 1: Compute log2 ratios
 log2_df <- ratio_df_annotated %>%

@@ -6,9 +6,41 @@ library(clusterProfiler)
 library(org.Hs.eg.db)
 library(ReactomePA)
 
+####### Get Data:
 
+# Pull discordant transcripts
+final_protein_coding <- read.csv("Data/discordant_RESUBMISSION.csv")
+
+# Pull correlated transcripts
+correlatin_coding_only <- read.csv("Data/correlated_RESUBMISSION.csv")
+
+
+# Load transcript_to_gene mapping
+transcript_gene_map <- read.csv("Data/transcript_to_gene.csv")
+transcript_gene_map$transcript_id <- sub("\\..*$", "", transcript_gene_map$transcript_id)
+
+final_protein_GENE <- merge(final_protein_coding, transcript_gene_map, by='transcript_id')
+#final_protein_GENE <- as.data.frame(final_protein_GENE[,-(1:3)])
+
+correlation_protein_GENE <- merge(correlatin_coding_only, transcript_gene_map, by='transcript_id')
+#correlation_protein_GENE <- as.data.frame(correlation_protein_GENE[,-(1:3)])
+
+write.csv(final_protein_GENE,"Data/final_protein_coding_GENES.csv", row.names = FALSE)
+write.csv(correlation_protein_GENE,"Data/correlation_protein_coding_GENES.csv", row.names = FALSE)
+
+
+#all_protein_coding <- read.csv("Data/protein_coding_RESUBMISSION.csv")
+#all_protein_GENE <- merge(all_protein_coding, transcript_gene_map, by='transcript_id')
+
+###################### Start Graphing
 correlation_genes <- read.csv("Data/correlation_protein_coding_GENES.csv")
+names(correlation_genes)[names(correlation_genes) == "Gene.y"] <- "Gene_name"
+
+
 final_genes <- read.csv ("Data/final_protein_coding_GENES.csv")
+names(final_genes)[names(final_genes) == "Gene.y"] <- "Gene_name"
+names(final_genes)[names(final_genes) == "Gene"] <- "Gene_name"
+names(final_genes)[names(final_genes) == "Gene.name"] <- "Gene_name"
 
 ## extract to vector
 correlation_symbols <- as.character(correlation_genes$Gene_name)
@@ -37,7 +69,8 @@ go_final <- enrichGO(gene         = final_entrez$ENTREZID,
                      keyType      = "ENTREZID",
                      ont          = "BP",
                      pAdjustMethod= "BH",
-                     pvalueCutoff = 0.05,
+                     pvalueCutoff = 0.9,
+                     qvalueCutoff = 0.9,
                      readable     = TRUE)
 
 # View top results
@@ -55,8 +88,8 @@ barplot(go_final, showCategory = 15, title = "Top GO Terms")
 
 
 # Save to CSV
-write.csv(as.data.frame(go_corr), "GO_correlation_genes.csv")
-write.csv(as.data.frame(go_final), "GO_final_genes.csv")
+write.csv(as.data.frame(go_corr), "go_results/GO_correlation_genes.csv", row.names = FALSE)
+write.csv(as.data.frame(go_final), "go_results/GO_final_genes.csv", row.names = FALSE)
 
 ## genes linked to specific GO
 library(dplyr)
@@ -94,7 +127,8 @@ head(reactome_final)
 reactome_final_all <- enrichPathway(
   gene         = final_entrez$ENTREZID,
   organism     = "human",
-  pvalueCutoff = 0.05,          # include all results
+  pvalueCutoff = 0.5, # include all results
+  qvalueCutoff = 0.5, # include all results
   readable     = TRUE
 )
 # Convert to data frame
@@ -121,7 +155,7 @@ reactome_df <- as.data.frame(reactome_result) %>% mutate(Source = "Reactome")
 # Combine
 combined_enrichment <- bind_rows(go_df, reactome_df)
 # Save combined results
-write.csv(combined_enrichment, "Combined_GO_Reactome_correlation_final.csv", row.names = FALSE)
+write.csv(combined_enrichment, "go_results.Combined_GO_Reactome_correlation_final.csv", row.names = FALSE)
 
 
 
@@ -134,13 +168,14 @@ kegg_corr <- enrichKEGG(gene = correlation_entrez$ENTREZID,
 
 kegg_final <- enrichKEGG(gene = final_entrez$ENTREZID,
                          organism = 'hsa',
-                         pvalueCutoff = 0.05)
+                         pvalueCutoff = 0.5,
+                         qvalueCutoff = 0.5)
 
 # Dotplot for KEGG results
 kegg_corr@result$Group <- "Correlation Genes"
 kegg_final@result$Group <- "Final Genes"
-combined_KEGG <- merge_result(kegg_corr, kegg_final)
-
+combined_KEGG <- merge_result(list(correlation = kegg_corr, 
+                                   discordant = kegg_final))
 dotplot(combined_KEGG, showCategory = 10, split = "Group") +
   ggtitle("KEGG Pathway Enrichment")
 
