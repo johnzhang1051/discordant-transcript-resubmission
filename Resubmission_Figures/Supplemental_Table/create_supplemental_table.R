@@ -196,6 +196,7 @@ overexpression_data <- ratio_df %>%
 
 # Merge with comprehensive dataset
 comprehensive_dataset <- left_join(comprehensive_dataset, overexpression_data, by = "transcript_id")
+
 # Step 13: Clean up and reorder columns
 final_columns <- c(
   "transcript_id",
@@ -204,12 +205,15 @@ final_columns <- c(
   "transcript_type",
   "mitf_pearson_correlation",
   "mitf_spearman_correlation", 
+  "tsoi_pearson_correlation",
+  "tsoi_spearman_correlation",
   "mitf_gene_pearson_correlation",
   "mitf_gene_spearman_correlation",
   "fdr",
   "counts",
-  "prjna_overexpression",
-  "gse_overexpression",  "has_chip_peak",
+  "prnja_overexpression",
+  "gse_overexpression",
+  "has_chip_peak",
   "is_correlated",
   "is_discordant",
   "is_protein_coding_filtered"
