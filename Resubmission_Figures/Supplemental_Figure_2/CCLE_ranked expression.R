@@ -3,25 +3,32 @@ library(tidyr)
 library(ggplot2)
 
 # Load CCLE expression data (using existing RDS files)
-expression_gene <- readRDS("data/CCLE_gene_disease_Figure1B.rds")
-transcript_expression <- readRDS("data/Figure_1C_CCLE_transcript.rds")
+expression_gene <- readRDS("data/CCLE_gene_disease_Figure1B_new.rds")
+transcript_expression <- readRDS("data/Figure_1C_CCLE_transcript_new.rds")
 
 # Load Supplemental Table (comprehensive data set)
 comprehensive_transcript_dataset <- read.csv("data/comprehensive_transcript_dataset.csv")
 
 ### CCLE GENE EXPRESSION DENSITY PLOTS ###
 
-# Step 1: Reshape expression_gene to long format
-long_expr <- expression_gene %>%
-  pivot_longer(cols = 4:56, names_to = "Gene", values_to = "Expression")
+gene_list_from_transcripts <- comprehensive_transcript_dataset %>%
+  pull(gene_id) %>%
+  unique()
 
-# Step 2: Filter for genes corresponding to your transcript lists
-# Note: You'll need to map transcript IDs to gene names if your lists only contain transcript IDs
-# For now, assuming your lists have gene information or you map them appropriately
+# Convert to data.table for speed
+dt <- as.data.table(expression_gene)
+gene_columns <- names(dt)[4:ncol(dt)]
+clean_gene_names <- gsub(" \\(\\d+\\)$", "", gene_columns)
 
-# Map them to gene IDs/names using the comprehensive mapping
-gene_list_from_transcripts <- unique(
-  comprehensive_transcript_dataset[comprehensive_transcript_dataset$transcript_id, "gene_id"])
+# Filter columns and melt
+keep_cols <- gene_columns[clean_gene_names %in% gene_list_from_transcripts]
+dt_subset <- dt[, c(names(dt)[1:3], keep_cols), with = FALSE]
+
+long_expr <- melt(dt_subset, 
+                 id.vars = names(dt)[1:3],
+                 variable.name = "Gene", 
+                 value.name = "Expression")
+long_expr$Gene <- gsub(" \\(\\d+\\)$", "", long_expr$Gene)
 
 long_expr_filtered <- long_expr %>%
   filter(Gene %in% gene_list_from_transcripts)

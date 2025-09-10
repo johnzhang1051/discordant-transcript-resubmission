@@ -2,16 +2,14 @@ library(ggplot2)
 library(dplyr)
 comprehensive_transcript_dataset <- read.csv("data/comprehensive_transcript_dataset.csv")
 
-Gene_transcript_pearson$transcript_id <- sub("\\..*$", "", Gene_transcript_pearson$transcript_id)
-Gene_transcript_pearson$gene_id <- sub("\\..*$", "", Gene_transcript_pearson$gene_id)
-
 ### ABR Gene expression CCLE
 
 library(ggplot2)
 library(dplyr)
 library(forcats)  # for fct_reorder
 ## 
-CCLE_gene_for_figure <- readRDS("CCLE_gene_disease_Figure1B.rds")
+CCLE_gene_for_figure <- readRDS("data/CCLE_gene_disease_Figure1B_new.rds")
+colnames(CCLE_gene_for_figure)[3:ncol(CCLE_gene_for_figure)] <- gsub(" \\(\\d+\\)$", "", colnames(CCLE_gene_for_figure)[3:ncol(CCLE_gene_for_figure)])
 # Prepare the data
 abr_df <- CCLE_gene_for_figure %>%
   dplyr::select(DepmapModelType = 3, ABR) %>%
@@ -40,7 +38,7 @@ ggplot(abr_df, aes(x = DepmapModelType, y = ABR, fill = color_group)) +
 
 ### ABR TRANSCRIPT EXPRESSION CCLE
 ### import df and plot ABR
-filtered_df_for_ABR_CCLE_transcript <- readRDS("Figure_1C_CCLE_transcript.rds")
+filtered_df_for_ABR_CCLE_transcript <- readRDS("data/Figure_1C_CCLE_transcript_new.rds")
 
 
 # Prepare the data
