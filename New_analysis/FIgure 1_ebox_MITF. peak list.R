@@ -112,10 +112,16 @@ ggplot(ebox_distribution, aes(x = EBOX_n_cat, y = proportion, fill = group)) +
 
 
 # OPTIONAL: Statistics (Chi-square on full contingency table)
-mitf_chisq <- mitf_distribution %>%
-  tidyr::pivot_wider(names_from = MITF_peak_n_cat, values_from = n) %>%
+mitf_chisq_data <- mitf_distribution %>%
+  select(group, MITF_peak_n_cat, n) %>%  # Select only the columns we need
+  tidyr::pivot_wider(names_from = MITF_peak_n_cat, values_from = n, values_fill = 0)
+
+mitf_matrix <- mitf_chisq_data %>%
   column_to_rownames("group") %>%
-  chisq.test()
+  as.matrix()
+
+mitf_chisq <- chisq.test(mitf_matrix)
+
 print(mitf_chisq)
 
 # Plot EBOX_n category proportions
