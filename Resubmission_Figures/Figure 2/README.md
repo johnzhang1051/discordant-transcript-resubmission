@@ -1,16 +1,15 @@
 # Figure 2:
-I need to make the following:
+* I've updated the data in the .R scripts in this folder
+* The charts are based on the following:
 
 ## Number of EBox within 1kB of TSS:
-`ChIP/Venn_promoter_peaks_shared.R`
-* Not sure how to make this
+`New_analysis/Figure1_Ebox_MITFpeak statistic.R`
 
 ## number of MITF ChIP peak within 1kB of TSS 
 `ChIP/Venn_promoter_peaks_shared.R`
 
 ## Boxplot - MITF knockdown effect on transcript expression in each transcript group (all datasets):
 `siMITF/siMITF_no_filtering.R`
-* having issue, boxes are very small
 
 ## Barplot - MITF knockdown effect on transcript expression in each transcript group (all datasets):
 `siMITF/siMITF_no_filtering.R`

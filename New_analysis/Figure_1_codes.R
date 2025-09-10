@@ -148,7 +148,7 @@ library(forcats)  # for fct_reorder
 CCLE_gene_for_figure <- readRDS("CCLE_gene_disease_Figure1B.rds")
 # Prepare the data
 abr_df <- CCLE_gene_for_figure %>%
-  select(DepmapModelType = 3, ABR) %>%
+  dplyr::select(DepmapModelType = 3, ABR) %>%
   mutate(color_group = ifelse(DepmapModelType == "SKCM", "Melanoma", "Other"))
 
 # Reorder DepmapModelType factor by median ABR (highest on right)
@@ -182,7 +182,7 @@ filtered_df_for_ABR_CCLE_transcript <- readRDS("Figure_1C_CCLE_transcript.rds")
 
 # Prepare the data
 abr_df <- filtered_df_for_ABR_CCLE_transcript %>%
-  select(DepmapModelType = 3, ENST00000544583) %>%
+  dplyr::select(DepmapModelType = 3, ENST00000544583) %>%
   mutate(color_group = ifelse(DepmapModelType == "SKCM", "Melanoma", "Other"))
 
 # Reorder DepmapModelType factor by median ABR (highest on right)
@@ -234,7 +234,7 @@ saveRDS(expr_clean, "TCGA_gene_expr_clean.rds")
 # Filter for ABR
 abr_expr <- expr_clean %>%
   filter(Gene == "ABR") %>%
-  select(gene_id, Gene, all_of(samples_to_keep))
+  dplyr::select(gene_id, Gene, all_of(samples_to_keep))
 
 # Pivot to long format
 abr_long <- abr_expr %>%
@@ -303,7 +303,7 @@ saveRDS(expr_clean,"TCGA_expr_clean.rds")
 # Filter for ABR
 abr_expr <- expr_clean %>%
   filter(Gene == "ABR") %>%
-  select(transcript_id, Gene, all_of(samples_to_keep))
+  dplyr::select(transcript_id, Gene, all_of(samples_to_keep))
 
 # Pivot to long format
 abr_long <- abr_expr %>%
@@ -360,7 +360,7 @@ expr_clean <- TCGA_transcript_expr_annotated_with_disease[1:54, ]
 
 abr_expr <- expr_clean %>%
   filter(Gene == "ABR") %>%
-  select(transcript_id, Gene, all_of(samples_to_keep))
+  dplyr::select(transcript_id, Gene, all_of(samples_to_keep))
 
 abr_long <- abr_expr %>%
   pivot_longer(

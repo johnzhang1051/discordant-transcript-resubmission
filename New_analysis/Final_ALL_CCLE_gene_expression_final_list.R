@@ -96,16 +96,16 @@ write.csv(rank_summary_df, "RankSummaries/gene_expression_summary.csv", row.name
 
 # === Compute mean expression per gene per model type ===
 ranked_df <- long_df %>%
-  group_by(Gene, DepmapModelType) %>%
-  summarise(mean_expr = mean(Expression, na.rm = TRUE), .groups = "drop") %>%
-  group_by(Gene) %>%
-  mutate(rank = rank(-mean_expr, ties.method = "average")) %>%
-  ungroup()
+  dplyr::group_by(Gene, DepmapModelType) %>%
+  dplyr::summarise(mean_expr = mean(Expression, na.rm = TRUE), .groups = "drop") %>%
+  dplyr::group_by(Gene) %>%
+  dplyr::mutate(rank = rank(-mean_expr, ties.method = "average")) %>%
+  dplyr::ungroup()
 
 # === Summarize ranks across genes per model type ===
 rank_summary <- ranked_df %>%
-  group_by(DepmapModelType) %>%
-  summarise(
+  dplyr::group_by(DepmapModelType) %>%
+  dplyr::summarise(
     mean_rank = mean(rank, na.rm = TRUE),
     median_rank = median(rank, na.rm = TRUE),
     .groups = "drop"
@@ -120,7 +120,7 @@ rank_long <- rank_summary %>%
   pivot_longer(cols = c(mean_rank, median_rank),
                names_to = "statistic",
                values_to = "rank_value") %>%
-  mutate(
+  dplyr::mutate(
     highlight = ifelse(DepmapModelType %in% c("SKCM", "UVM"), "highlight", "other"),
     fill_key = paste(statistic, highlight, sep = ".")
   )
@@ -169,7 +169,7 @@ library(forcats)  # for fct_reorder
 CCLE_gene_for_figure <- readRDS("CCLE_gene_disease_Figure1B.rds")
 # Prepare the data
 abr_df <- CCLE_gene_for_figure %>%
-  select(DepmapModelType = 3, ABR) %>%
+  dplyr::select(DepmapModelType = 3, ABR) %>%
   mutate(color_group = ifelse(DepmapModelType == "SKCM", "Melanoma", "Other"))
 
 # Reorder DepmapModelType factor by median ABR (highest on right)
