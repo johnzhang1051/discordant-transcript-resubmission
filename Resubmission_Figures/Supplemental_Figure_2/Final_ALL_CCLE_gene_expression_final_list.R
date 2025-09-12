@@ -3,9 +3,7 @@ library(data.table)
 library(dplyr)
 
 # Load raw data
-expr_df <- readr::read_csv(
-  file=file.path("data", "CCLE_expression.csv")
-)
+expr_df <- read.csv("Data/CCLE_expression.csv")
 model_ID <- read.csv("data/cell_line_disease.csv")
 
 # Rename the first column
