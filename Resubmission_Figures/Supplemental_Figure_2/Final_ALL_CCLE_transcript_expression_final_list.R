@@ -39,6 +39,15 @@ merged_expr <- merge(model_ID, expr_temp_data, by = "ModelID")
 # Clean column names
 colnames(merged_expr)[4:ncol(merged_expr)] <- sub("\\.$", "", colnames(merged_expr)[4:ncol(merged_expr)])
 
+# TCGA DepMap Filtering to "allowed" DepMap Model Types
+TCGA_model_type <- read.csv("data/TCGA_DepmapModelType.txt")
+TCGA_modeltype_unique <- unique(trimws(as.character(TCGA_model_type$DepmapModelType)))
+# Clean up the column for matching
+merged_expr$DepmapModelType <- trimws(as.character(merged_expr$DepmapModelType))
+# Filter to keep only matching model types
+merged_expr <- merged_expr[merged_expr$DepmapModelType %in% TCGA_modeltype_unique, ]
+
+
 # Add transcript filtering
 final_list <- read.csv("data/final_transcript_list.txt")
 final_transcripts <- as.character(final_list$transcript_id)
