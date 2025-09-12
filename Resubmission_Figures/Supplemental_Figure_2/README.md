@@ -6,6 +6,8 @@ A)
 `Resubmission_Figures/Supplemental_Figure_2/CCLE_ranked expression.R`
 
 * This may not be worth doing, I attempted to create them on 9/10 with new data, but looked wonky.
+* I think I may need to get new CCLE expression data for our new transcripts, but I might be wrong
+* Since we have Tsoi data now, I could also just filter out Tsoi data
 
 
 B)

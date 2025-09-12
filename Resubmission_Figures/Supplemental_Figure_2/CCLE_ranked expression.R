@@ -8,6 +8,8 @@ transcript_expression <- readRDS("data/Figure_1C_CCLE_transcript_new.rds")
 
 # Load Supplemental Table (comprehensive data set)
 comprehensive_transcript_dataset <- read.csv("data/comprehensive_transcript_dataset.csv")
+comprehensive_transcript_dataset <- comprehensive_transcript_dataset %>% 
+  filter(data_source %in% c("CCLE", "CCLE+Tsoi"))
 
 ### CCLE GENE EXPRESSION DENSITY PLOTS ###
 
