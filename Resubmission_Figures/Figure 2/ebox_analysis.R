@@ -85,10 +85,9 @@ custom_colors <- c(
 
 # Plot EBOX distribution (same formatting as your other charts)
 ggplot(ebox_distribution, aes(x = EBOX_n_cat, y = proportion, fill = group)) +
-  geom_bar(stat = "identity", position = position_dodge(width = 0.8)) +
+  geom_bar(stat = "identity", position = position_dodge(width = 0.8), show.legend = FALSE) +
   scale_fill_manual(values = custom_colors) +
-  labs(title = "Number of E-Box",
-       y = "Percentage of Transcripts") +
+  # labs(title = "Number of E-Box", y = "Percentage of Transcripts") +
   theme_minimal(base_size = 14) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
   theme(
@@ -96,5 +95,89 @@ ggplot(ebox_distribution, aes(x = EBOX_n_cat, y = proportion, fill = group)) +
     axis.text.x = element_text(size = 14),
     axis.text.y = element_text(size = 14),
     axis.title.x = element_blank(),
-    axis.title.y = element_text(size = 16, margin = margin(r = 15))
+    axis.title.y = element_blank()
   )
+
+
+
+
+######### Statistical Significance:
+library(dplyr)
+library(tidyr)
+
+# Step 1: Prepare categorized data
+df_stats <- transcript_annotation %>%
+  mutate(group = case_when(
+    transcript_id %in% transcript_unique$transcript_id ~ "Unique",
+    transcript_id %in% transcript_correlation_all$transcript_id ~ "Correlation",
+    TRUE ~ "All"
+  )) %>%
+  mutate(EBOX_n_cat = case_when(
+    EBOX_n == 0 ~ "0",
+    EBOX_n == 1 ~ "1",
+    EBOX_n == 2 ~ "2",
+    EBOX_n >= 3 ~ "≥3"
+  ))
+
+# Step 2: Define groups and categories
+groups <- c("Unique", "Correlation", "All")
+categories <- c("0", "1", "2", "≥3")
+
+# Step 3: Function to compute Fisher test between two groups for a category
+fisher_compare <- function(group1, group2, cat) {
+  data_sub <- df_stats %>%
+    filter(group %in% c(group1, group2)) %>%
+    mutate(in_category = EBOX_n_cat == cat)
+  
+  # Contingency table
+  tab <- table(data_sub$group, data_sub$in_category)
+  
+  # Run Fisher's exact test with simulation
+  test <- fisher.test(tab, simulate.p.value = TRUE, B = 1e5)
+  
+  data.frame(
+    Comparison = paste(group1, "vs", group2),
+    Category = cat,
+    P_value = signif(test$p.value, 4),
+    stringsAsFactors = FALSE
+  )
+}
+
+# Step 4: Run all pairwise comparisons
+results <- list()
+
+for (i in 1:(length(groups) - 1)) {
+  for (j in (i + 1):length(groups)) {
+    g1 <- groups[i]
+    g2 <- groups[j]
+    for (cat in categories) {
+      res <- fisher_compare(g1, g2, cat)
+      results[[length(results) + 1]] <- res
+    }
+  }
+}
+
+# Step 5: Combine into a data frame and print
+all_ebox_results <- do.call(rbind, results)
+
+# Add multiple testing correction and enhanced output
+all_ebox_results$P_adjusted_FDR <- p.adjust(all_ebox_results$P_value, method = "fdr")
+
+# Add significance indicators
+all_ebox_results$Significance_raw <- case_when(
+  all_ebox_results$P_value < 0.0001 ~ "****",
+  all_ebox_results$P_value < 0.001 ~ "***", 
+  all_ebox_results$P_value < 0.01 ~ "**",
+  all_ebox_results$P_value < 0.05 ~ "*",
+  TRUE ~ "n.s."
+)
+
+all_ebox_results$Significance_adjusted <- case_when(
+  all_ebox_results$P_adjusted_FDR < 0.0001 ~ "****",
+  all_ebox_results$P_adjusted_FDR < 0.001 ~ "***",
+  all_ebox_results$P_adjusted_FDR < 0.01 ~ "**", 
+  all_ebox_results$P_adjusted_FDR < 0.05 ~ "*",
+  TRUE ~ "n.s."
+)
+
+print(all_ebox_results)

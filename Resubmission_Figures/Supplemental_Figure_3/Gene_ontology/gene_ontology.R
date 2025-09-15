@@ -138,7 +138,7 @@ reactome_df <- as.data.frame(reactome_final_all)
 head(reactome_df[order(reactome_df$pvalue), ], 10)
 
 # Or view top 10 by z-score (if you want ranked activity)
-head(reactome_df[order(-reactome_df$zScore), ], 10)d
+head(reactome_df[order(-reactome_df$zScore), ], 10)
 ##Even if they're not significant, you can still visualize them:
 dotplot(reactome_final_all, showCategory = 15) +
   ggtitle("Top Reactome Pathways (Unfiltered)")

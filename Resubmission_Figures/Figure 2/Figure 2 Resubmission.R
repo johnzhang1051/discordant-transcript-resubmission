@@ -1,6 +1,7 @@
 library(dplyr)
 library(ggplot2)
 library(tidyr)
+library(textshape)
 
 # Load data using the same sources as your first two codes
 protein_coding <- read.csv("data/protein_coding_RESUBMISSION.csv")
@@ -133,7 +134,7 @@ mitf_distribution <- transcript_annotation %>%
   summarise(n = n(), .groups = "drop") %>%
   group_by(group) %>%
   mutate(total = sum(n), proportion = n / total) %>%
-  select(group, MITF_peak_n_cat, n, proportion)
+  dplyr::select(group, MITF_peak_n_cat, n, proportion)
 
 # Reorder factor levels for plotting
 mitf_distribution$MITF_peak_n_cat <- factor(mitf_distribution$MITF_peak_n_cat,
@@ -148,10 +149,9 @@ custom_colors <- c(
 
 # Plot MITF_peak_n category proportions (same formatting as original)
 ggplot(mitf_distribution, aes(x = MITF_peak_n_cat, y = proportion, fill = group)) +
-  geom_bar(stat = "identity", position = position_dodge(width = 0.8)) +
+  geom_bar(stat = "identity", position = position_dodge(width = 0.9), show.legend = FALSE) +
   scale_fill_manual(values = custom_colors) +
-  labs(title = "Number of MITF ChIP Peaks",
-       y = "Percentage of Transcripts") +
+  #labs(title = "Number of MITF ChIP Peaks",y = "Percentage of Transcripts") +
   theme_minimal(base_size = 14) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
   theme(
@@ -159,32 +159,29 @@ ggplot(mitf_distribution, aes(x = MITF_peak_n_cat, y = proportion, fill = group)
     axis.text.x = element_text(size = 14),
     axis.text.y = element_text(size = 14),
     axis.title.x = element_blank(),
-    axis.title.y = element_text(size = 16, margin = margin(r = 15))
-  )
+    axis.title.y = element_blank())
+
 
 ## Average Knockdown Distribution (same formatting as original)
 # Clean avg_knockdown: remove NaN, zeros, and values > 2
 knockdown_data <- transcript_annotation %>%
   filter(!is.na(avg_knockdown) & !is.nan(avg_knockdown)) %>%
   filter(avg_knockdown > 0 & avg_knockdown <= 2) %>%
-  select(transcript_id, group, avg_knockdown)
+  dplyr::select(transcript_id, group, avg_knockdown)
 
 # Boxplot (same formatting as original)
 ggplot(knockdown_data, aes(x = group, y = avg_knockdown, fill = group)) +
   geom_boxplot(outlier.shape = NA, alpha = 0.7) +
   scale_fill_manual(values = custom_colors) +
   theme_minimal(base_size = 14) +
-  labs(
-    title = "Transcript Expression (siMITF/siCON)",
-    y = "Relative Expression"
-  ) +
+  #labs(title = "Transcript Expression (siMITF/siCON)",y = "Relative Expression") +
   theme(
     legend.position = "none",
     axis.text.x = element_text(size = 14),
     axis.text.y = element_text(size = 11),
     axis.title.x = element_blank(),
-    axis.title.y = element_text(size = 16, margin = margin(r = 15))
-  )
+    axis.title.y = element_blank())
+
 
 ## Average Knockdown Binned Distribution (same formatting as original)
 # Clean and bin avg_knockdown
@@ -200,7 +197,7 @@ knockdown_binned <- transcript_annotation %>%
   summarise(n = n(), .groups = "drop") %>%
   group_by(group) %>%
   mutate(total = sum(n), proportion = n / total) %>%
-  select(group, knockdown_bin, n, proportion)
+  dplyr::select(group, knockdown_bin, n, proportion)
 
 # Set the order of knockdown_bin
 knockdown_binned$knockdown_bin <- factor(knockdown_binned$knockdown_bin,
@@ -208,12 +205,16 @@ knockdown_binned$knockdown_bin <- factor(knockdown_binned$knockdown_bin,
 
 # Plot binned knockdown (same formatting as original)
 ggplot(knockdown_binned, aes(x = knockdown_bin, y = proportion, fill = group)) +
-  geom_bar(stat = "identity", position = position_dodge(width = 0.8)) +
+  geom_bar(stat = "identity", position = position_dodge(width = 0.8), show.legend = FALSE) +
   scale_fill_manual(values = custom_colors) +
-  labs(title = "Transcript Expression (siMITF/siCON) (binned)", y = "Percentage of Transcripts") +
+  #labs(title = "Transcript Expression (siMITF/siCON) (binned)", y = "Percentage of Transcripts") +
   theme_minimal(base_size = 14) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
-  theme(legend.title = element_blank())
+  theme(
+    legend.position = element_blank(),
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank())
+
 
 
 ## Proportion of Transcripts with Unique Promoters
@@ -221,7 +222,7 @@ library(GenomicRanges)
 
 # Extract transcript coordinates from Kenny dataset for promoter analysis
 transcript_coords <- Kenny %>%
-  select(transcript_id, seqnames, start, end, strand, geneId) %>%
+  dplyr::select(transcript_id, seqnames, start, end, strand, geneId) %>%
   distinct() %>%
   mutate(
     # Define promoter as 1kb upstream of TSS
@@ -231,7 +232,7 @@ transcript_coords <- Kenny %>%
   )
 
 transcript_coords_clean <- transcript_coords %>%
-  select(-start, -end)  # Remove conflicting column names
+  dplyr::select(-start, -end)  # Remove conflicting column names
 
 promoter_gr <- makeGRangesFromDataFrame(
   transcript_coords_clean,
@@ -280,13 +281,338 @@ unique_promoter_stats$group <- factor(unique_promoter_stats$group,
 ggplot(unique_promoter_stats, aes(x = group, y = proportion, fill = group)) +
   geom_bar(stat = "identity", width = 0.6, show.legend = FALSE) +
   scale_fill_manual(values = custom_colors) +
-  labs(
-    title = "Proportion of Transcripts with Unique Promoters",
-    x = "Transcript Group",
-    y = "Proportion of Transcripts"
-  ) +
   theme_minimal(base_size = 14) +
-  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  theme(
+    legend.title = element_blank(),
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank())
+
+### ### ### ### ### ### STATISTICAL TESTS FOR P-VALUES ### ### ### ### ### ### 
+
+library(dplyr)
+library(tidyr)
+
+# 1. MITF PEAK ANALYSIS - Fisher's exact tests
+cat("=== MITF PEAK ANALYSIS ===\n")
+
+# Prepare MITF data for testing
+df_stats_mitf <- transcript_annotation %>%
+  mutate(MITF_peak_n_cat = case_when(
+    MITF_peak_n == 0 ~ "0",
+    MITF_peak_n == 1 ~ "1",
+    MITF_peak_n >= 2 ~ "≥2"
+  ))
+
+# Define groups and categories
+groups <- c("Unique", "Correlation", "All")
+mitf_categories <- c("0", "1", "≥2")
+
+# Function for Fisher test on MITF peaks
+fisher_compare_mitf <- function(group1, group2, cat) {
+  data_sub <- df_stats_mitf %>%
+    filter(group %in% c(group1, group2)) %>%
+    mutate(in_category = MITF_peak_n_cat == cat)
+  
+  tab <- table(data_sub$group, data_sub$in_category)
+  test <- fisher.test(tab, simulate.p.value = TRUE, B = 1e5)
+  
+  data.frame(
+    Comparison = paste(group1, "vs", group2),
+    Category = cat,
+    P_value = signif(test$p.value, 4),
+    Odds_Ratio = as.numeric(test$estimate),
+    CI_lower = test$conf.int[1],
+    CI_upper = test$conf.int[2],
+    stringsAsFactors = FALSE
+  )
+}
+
+# Run MITF comparisons
+mitf_results <- list()
+for (i in 1:(length(groups) - 1)) {
+  for (j in (i + 1):length(groups)) {
+    g1 <- groups[i]
+    g2 <- groups[j]
+    for (cat in mitf_categories) {
+      res <- fisher_compare_mitf(g1, g2, cat)
+      mitf_results[[length(mitf_results) + 1]] <- res
+    }
+  }
+}
+
+mitf_all_results <- do.call(rbind, mitf_results)
+mitf_all_results$P_adjusted_FDR <- p.adjust(mitf_all_results$P_value, method = "fdr")
+
+# Add significance indicators
+mitf_all_results$Significance_raw <- case_when(
+  mitf_all_results$P_value < 0.0001 ~ "****",
+  mitf_all_results$P_value < 0.001 ~ "***",
+  mitf_all_results$P_value < 0.01 ~ "**",
+  mitf_all_results$P_value < 0.05 ~ "*",
+  TRUE ~ "n.s."
+)
+
+mitf_all_results$Significance_adjusted <- case_when(
+  mitf_all_results$P_adjusted_FDR < 0.0001 ~ "****",
+  mitf_all_results$P_adjusted_FDR < 0.001 ~ "***",
+  mitf_all_results$P_adjusted_FDR < 0.01 ~ "**",
+  mitf_all_results$P_adjusted_FDR < 0.05 ~ "*",
+  TRUE ~ "n.s."
+)
+
+print("MITF Peak Analysis Results:")
+print(mitf_all_results)
 
 
+# 2. AVERAGE KNOCKDOWN ANALYSIS - Wilcoxon tests for continuous data
+cat("\n=== AVERAGE KNOCKDOWN ANALYSIS (Continuous) ===\n")
 
+# Use the same knockdown_data you already created
+knockdown_stats_results <- list()
+
+for (i in 1:(length(groups) - 1)) {
+  for (j in (i + 1):length(groups)) {
+    g1 <- groups[i]
+    g2 <- groups[j]
+    
+    group1_data <- knockdown_data %>% filter(group == g1) %>% pull(avg_knockdown)
+    group2_data <- knockdown_data %>% filter(group == g2) %>% pull(avg_knockdown)
+    
+    # Wilcoxon test
+    wilcox_test <- wilcox.test(group1_data, group2_data)
+    
+    # Effect size (r = Z / sqrt(N))
+    n1 <- length(group1_data)
+    n2 <- length(group2_data)
+    n_total <- n1 + n2
+    r_effect_size <- abs(qnorm(wilcox_test$p.value/2)) / sqrt(n_total)
+    
+    effect_interpretation <- case_when(
+      r_effect_size < 0.1 ~ "negligible",
+      r_effect_size < 0.3 ~ "small",
+      r_effect_size < 0.5 ~ "medium",
+      TRUE ~ "large"
+    )
+    
+    knockdown_stats_results[[length(knockdown_stats_results) + 1]] <- data.frame(
+      Comparison = paste(g1, "vs", g2),
+      P_value = wilcox_test$p.value,
+      Effect_size_r = r_effect_size,
+      Effect_interpretation = effect_interpretation,
+      Group1_median = median(group1_data, na.rm = TRUE),
+      Group2_median = median(group2_data, na.rm = TRUE),
+      stringsAsFactors = FALSE
+    )
+  }
+}
+
+knockdown_continuous_results <- do.call(rbind, knockdown_stats_results)
+knockdown_continuous_results$P_adjusted_FDR <- p.adjust(knockdown_continuous_results$P_value, method = "fdr")
+
+knockdown_continuous_results$Significance_raw <- case_when(
+  knockdown_continuous_results$P_value < 0.0001 ~ "****",
+  knockdown_continuous_results$P_value < 0.001 ~ "***",
+  knockdown_continuous_results$P_value < 0.01 ~ "**",
+  knockdown_continuous_results$P_value < 0.05 ~ "*",
+  TRUE ~ "n.s."
+)
+
+knockdown_continuous_results$Significance_adjusted <- case_when(
+  knockdown_continuous_results$P_adjusted_FDR < 0.0001 ~ "****",
+  knockdown_continuous_results$P_adjusted_FDR < 0.001 ~ "***",
+  knockdown_continuous_results$P_adjusted_FDR < 0.01 ~ "**",
+  knockdown_continuous_results$P_adjusted_FDR < 0.05 ~ "*",
+  TRUE ~ "n.s."
+)
+
+print("Average Knockdown Analysis Results:")
+print(knockdown_continuous_results)
+
+
+# 3. BINNED KNOCKDOWN ANALYSIS - Fisher's exact tests
+cat("\n=== BINNED KNOCKDOWN ANALYSIS ===\n")
+
+# Prepare binned knockdown data for testing
+df_stats_knockdown_binned <- transcript_annotation %>%
+  filter(!is.na(avg_knockdown) & !is.nan(avg_knockdown), avg_knockdown > 0) %>%
+  mutate(knockdown_bin = case_when(
+    avg_knockdown <= 0.25 ~ "≤0.25",
+    avg_knockdown <= 0.5 ~ "0.26–0.5",
+    avg_knockdown <= 1 ~ "0.51–1",
+    avg_knockdown > 1 ~ "≥1"
+  ))
+
+knockdown_bins <- c("≤0.25", "0.26–0.5", "0.51–1", "≥1")
+
+# Function for Fisher test on binned knockdown
+fisher_compare_knockdown_binned <- function(group1, group2, bin) {
+  data_sub <- df_stats_knockdown_binned %>%
+    filter(group %in% c(group1, group2)) %>%
+    mutate(in_bin = knockdown_bin == bin)
+  
+  tab <- table(data_sub$group, data_sub$in_bin)
+  test <- fisher.test(tab, simulate.p.value = TRUE, B = 1e5)
+  
+  data.frame(
+    Comparison = paste(group1, "vs", group2),
+    Knockdown_Bin = bin,
+    P_value = signif(test$p.value, 4),
+    Odds_Ratio = as.numeric(test$estimate),
+    CI_lower = test$conf.int[1],
+    CI_upper = test$conf.int[2],
+    stringsAsFactors = FALSE
+  )
+}
+
+# Run binned knockdown comparisons
+knockdown_binned_results <- list()
+for (i in 1:(length(groups) - 1)) {
+  for (j in (i + 1):length(groups)) {
+    g1 <- groups[i]
+    g2 <- groups[j]
+    for (bin in knockdown_bins) {
+      res <- fisher_compare_knockdown_binned(g1, g2, bin)
+      knockdown_binned_results[[length(knockdown_binned_results) + 1]] <- res
+    }
+  }
+}
+
+knockdown_binned_all_results <- do.call(rbind, knockdown_binned_results)
+knockdown_binned_all_results$P_adjusted_FDR <- p.adjust(knockdown_binned_all_results$P_value, method = "fdr")
+
+knockdown_binned_all_results$Significance_raw <- case_when(
+  knockdown_binned_all_results$P_value < 0.0001 ~ "****",
+  knockdown_binned_all_results$P_value < 0.001 ~ "***",
+  knockdown_binned_all_results$P_value < 0.01 ~ "**",
+  knockdown_binned_all_results$P_value < 0.05 ~ "*",
+  TRUE ~ "n.s."
+)
+
+knockdown_binned_all_results$Significance_adjusted <- case_when(
+  knockdown_binned_all_results$P_adjusted_FDR < 0.0001 ~ "****",
+  knockdown_binned_all_results$P_adjusted_FDR < 0.001 ~ "***",
+  knockdown_binned_all_results$P_adjusted_FDR < 0.01 ~ "**",
+  knockdown_binned_all_results$P_adjusted_FDR < 0.05 ~ "*",
+  TRUE ~ "n.s."
+)
+
+print("Binned Knockdown Analysis Results:")
+print(knockdown_binned_all_results)
+
+
+# 4. UNIQUE PROMOTER ANALYSIS - Fisher's exact tests
+cat("\n=== UNIQUE PROMOTER ANALYSIS ===\n")
+
+# Function for unique promoter Fisher test
+fisher_compare_unique_promoter <- function(group1, group2, transcript_list1, transcript_list2, unique_promoter_transcripts) {
+  
+  # Count overlaps for each group
+  group1_unique <- sum(transcript_list1$transcript_id %in% unique_promoter_transcripts)
+  group1_total <- nrow(transcript_list1)
+  group1_non_unique <- group1_total - group1_unique
+  
+  group2_unique <- sum(transcript_list2$transcript_id %in% unique_promoter_transcripts)
+  group2_total <- nrow(transcript_list2)
+  group2_non_unique <- group2_total - group2_unique
+  
+  # Create contingency table
+  tab <- matrix(c(group1_unique, group1_non_unique, group2_unique, group2_non_unique), 
+                nrow = 2, 
+                dimnames = list(c(group1, group2), c("Unique", "Non-unique")))
+  
+  test <- fisher.test(tab)
+  
+  data.frame(
+    Comparison = paste(group1, "vs", group2),
+    P_value = signif(test$p.value, 4),
+    Odds_Ratio = as.numeric(test$estimate),
+    CI_lower = test$conf.int[1],
+    CI_upper = test$conf.int[2],
+    Group1_proportion = group1_unique / group1_total,
+    Group2_proportion = group2_unique / group2_total,
+    stringsAsFactors = FALSE
+  )
+}
+
+# Run unique promoter comparisons
+unique_promoter_results <- list()
+
+# All vs Correlation
+res1 <- fisher_compare_unique_promoter("All", "Correlation", protein_coding, transcript_correlation_all, unique_promoter_transcripts)
+unique_promoter_results[[1]] <- res1
+
+# All vs Unique  
+res2 <- fisher_compare_unique_promoter("All", "Unique", protein_coding, transcript_unique, unique_promoter_transcripts)
+unique_promoter_results[[2]] <- res2
+
+# Correlation vs Unique
+res3 <- fisher_compare_unique_promoter("Correlation", "Unique", transcript_correlation_all, transcript_unique, unique_promoter_transcripts)
+unique_promoter_results[[3]] <- res3
+
+unique_promoter_all_results <- do.call(rbind, unique_promoter_results)
+unique_promoter_all_results$P_adjusted_FDR <- p.adjust(unique_promoter_all_results$P_value, method = "fdr")
+
+unique_promoter_all_results$Significance_raw <- case_when(
+  unique_promoter_all_results$P_value < 0.0001 ~ "****",
+  unique_promoter_all_results$P_value < 0.001 ~ "***",
+  unique_promoter_all_results$P_value < 0.01 ~ "**",
+  unique_promoter_all_results$P_value < 0.05 ~ "*",
+  TRUE ~ "n.s."
+)
+
+unique_promoter_all_results$Significance_adjusted <- case_when(
+  unique_promoter_all_results$P_adjusted_FDR < 0.0001 ~ "****",
+  unique_promoter_all_results$P_adjusted_FDR < 0.001 ~ "***",
+  unique_promoter_all_results$P_adjusted_FDR < 0.01 ~ "**",
+  unique_promoter_all_results$P_adjusted_FDR < 0.05 ~ "*",
+  TRUE ~ "n.s."
+)
+
+print("Unique Promoter Analysis Results:")
+print(unique_promoter_all_results)
+
+
+# 5. SUMMARY OF ALL SIGNIFICANT FINDINGS
+
+# Collect all significant results
+sig_mitf <- mitf_all_results %>% filter(P_adjusted_FDR < 0.05) %>% 
+  mutate(Analysis = "MITF Peaks", Variable = Category)
+
+sig_knockdown_cont <- knockdown_continuous_results %>% filter(P_adjusted_FDR < 0.05) %>%
+  mutate(Analysis = "Knockdown (Continuous)", Variable = "avg_knockdown")
+
+sig_knockdown_binned <- knockdown_binned_all_results %>% filter(P_adjusted_FDR < 0.05) %>%
+  mutate(Analysis = "Knockdown (Binned)", Variable = Knockdown_Bin)
+
+sig_unique_promoter <- unique_promoter_all_results %>% filter(P_adjusted_FDR < 0.05) %>%
+  mutate(Analysis = "Unique Promoter", Variable = "unique_promoter")
+
+# Print summaries
+if(nrow(sig_mitf) > 0) {
+  cat("Significant MITF Peak differences:\n")
+  print(sig_mitf %>% dplyr::select(Analysis, Comparison, Variable, P_value, Significance_raw, P_adjusted_FDR, Significance_adjusted))
+  cat("\n")
+}
+
+if(nrow(sig_knockdown_cont) > 0) {
+  cat("Significant Knockdown (Continuous) differences:\n")
+  print(sig_knockdown_cont %>% dplyr::select(Analysis, Comparison, P_value, Significance_raw, P_adjusted_FDR, Significance_adjusted, Effect_interpretation))
+  cat("\n")
+}
+
+if(nrow(sig_knockdown_binned) > 0) {
+  cat("Significant Knockdown (Binned) differences:\n")
+  print(sig_knockdown_binned %>% dplyr::select(Analysis, Comparison, Variable, P_value, Significance_raw, P_adjusted_FDR, Significance_adjusted))
+  cat("\n")
+}
+
+if(nrow(sig_unique_promoter) > 0) {
+  cat("Significant Unique Promoter differences:\n")
+  print(sig_unique_promoter %>% dplyr::select(Analysis, Comparison, P_value, Significance_raw, P_adjusted_FDR, Significance_adjusted))
+  cat("\n")
+}
+
+# Total tests performed
+total_tests <- nrow(mitf_all_results) + nrow(knockdown_continuous_results) + 
+  nrow(knockdown_binned_all_results) + nrow(unique_promoter_all_results)

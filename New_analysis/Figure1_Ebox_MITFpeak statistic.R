@@ -34,7 +34,7 @@ mitf_distribution <- transcript_annotation %>%
   summarise(n = n(), .groups = "drop") %>%
   group_by(group) %>%
   mutate(total = sum(n), proportion = n / total) %>%
-  select(group, MITF_peak_n_cat, n, proportion)
+  dplyr::select(group, MITF_peak_n_cat, n, proportion)
 
 # Reorder factor levels for plotting
 mitf_distribution$MITF_peak_n_cat <- factor(mitf_distribution$MITF_peak_n_cat,
@@ -57,7 +57,7 @@ ebox_distribution <- transcript_annotation %>%
   summarise(n = n(), .groups = "drop") %>%
   group_by(group) %>%
   mutate(total = sum(n), proportion = n / total) %>%
-  select(group, EBOX_n_cat, n, proportion)
+  dplyr::select(group, EBOX_n_cat, n, proportion)
 
 # Order the factor levels for plotting
 ebox_distribution$EBOX_n_cat <- factor(ebox_distribution$EBOX_n_cat, 
@@ -146,7 +146,7 @@ ebox_distribution <- transcript_annotation %>%
   summarise(n = n(), .groups = "drop") %>%
   group_by(group) %>%
   mutate(total = sum(n), proportion = n / total) %>%
-  select(group, EBOX_n_cat, n, proportion)
+  dplyr::select(group, EBOX_n_cat, n, proportion)
 # Ensure EBOX_n_cat is ordered
 ebox_distribution$EBOX_n_cat <- factor(ebox_distribution$EBOX_n_cat,
                                        levels = c("0", "1", "2", "3", "4", "≥5"))
@@ -183,7 +183,7 @@ knockdown_data <- transcript_annotation %>%
     transcript_id %in% transcript_correlation_all$transcript_id ~ "Correlation",
     TRUE ~ "All"
   )) %>%
-  select(transcript_id, group, avg_knockdown)
+  dplyr::select(transcript_id, group, avg_knockdown)
 
 custom_colors <- c(
   "All" = "#FADADD",          # light pink
@@ -229,7 +229,7 @@ knockdown_binned <- transcript_annotation %>%
   summarise(n = n(), .groups = "drop") %>%
   group_by(group) %>%
   mutate(total = sum(n), proportion = n / total) %>%
-  select(group, knockdown_bin, n, proportion)
+  dplyr::select(group, knockdown_bin, n, proportion)
 
 # Set the order of knockdown_bin
 knockdown_binned$knockdown_bin <- factor(knockdown_binned$knockdown_bin,
