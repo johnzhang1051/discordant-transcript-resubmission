@@ -29,12 +29,14 @@ Re-organized code for paper identifying MITF regulated transcript isoforms
    * Create Supplementary Figures and Files:
    * Figure 1:
       * A subset of transcripts in melanoma have high correlation with MITF, while the parent genes of the same transcripts show lower correlation with MITF
+      * This was also re-done by Steve
    * Figure 2:
       * Discordantly correlated transcripts are enriched for features associated with MITF regulation and are more likely to be associated with a unique promoter
    * Supplementary Table 1:
       * Fully annotated dataset of all MITF-regulated transcript features
    * Supplementary Figure 1:
       * Outline of transcript filtering strategy
+      * This was already re-done by Steve
    * Supplementary Figure 2:
       * Expression of discordantly correlated genes is enriched in melanoma
    * Supplementary Figure 3:

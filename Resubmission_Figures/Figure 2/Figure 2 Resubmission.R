@@ -612,7 +612,3 @@ if(nrow(sig_unique_promoter) > 0) {
   print(sig_unique_promoter %>% dplyr::select(Analysis, Comparison, P_value, Significance_raw, P_adjusted_FDR, Significance_adjusted))
   cat("\n")
 }
-
-# Total tests performed
-total_tests <- nrow(mitf_all_results) + nrow(knockdown_continuous_results) + 
-  nrow(knockdown_binned_all_results) + nrow(unique_promoter_all_results)
