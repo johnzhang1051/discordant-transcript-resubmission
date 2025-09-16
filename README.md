@@ -1,7 +1,7 @@
 # discordant-transcript-resubmission
 Re-organized code for paper identifying MITF regulated transcript isoforms
 
-# Analysis Flow:
+# Analysis Flow/Steps:
 
 1. NEWEST_CCLE:
    * Get original datasets from Depmap
@@ -14,7 +14,6 @@ Re-organized code for paper identifying MITF regulated transcript isoforms
       * Melanoma_models - **not used anywhere?**
 2. NEWEST_CCLE:
    * Clean data in `NEWEST_CCLE/CoCor_Data_sets/Clean_Newest_CCLE_Melanoma_Expression.R`
-   * Filter to protein coding transcripts
    * In `NEWEST_CCLE/CoCor_CCLE.R` generate correlation values (pearson + spearman) for transcripts correlated with MITF (>= 0.5 both), and identify discordant transcripts using CoCor
 3. Tsoi:
    * In `NEWEST_CCLE/CCLE_Tsoi_final_discordant.R`
@@ -24,12 +23,12 @@ Re-organized code for paper identifying MITF regulated transcript isoforms
    * This gives us our pre-filtered lists of discordant transcripts and correlated transcripts
 4. NEWEST_CCLE:
    * Run the 3 filter .R scripts in `NEWEST_CCLE/Filter_low_expressed`
-   * That gives us the final 3 lists of transcripts we'll use to make Figures
+   * That gives us the final 3 lists of transcripts we'll use to run analysis
 5. Resubmission_Figures:
    * Create Supplementary Figures and Files:
    * Figure 1:
       * A subset of transcripts in melanoma have high correlation with MITF, while the parent genes of the same transcripts show lower correlation with MITF
-      * This was also re-done by Steve
+      * This was already re-done by Steve
    * Figure 2:
       * Discordantly correlated transcripts are enriched for features associated with MITF regulation and are more likely to be associated with a unique promoter
    * Supplementary Table 1:
