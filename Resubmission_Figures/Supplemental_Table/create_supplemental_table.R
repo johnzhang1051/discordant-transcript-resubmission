@@ -6,6 +6,7 @@ library(tidyr)
 discordant_list <- read.csv("data/final_paper_lists/discordant_RESUBMISSION.csv")
 correlated_list <- read.csv("data/final_paper_lists/correlated_RESUBMISSION.csv")
 
+
 # Load correlation data
 ccle_pearson <- read.csv("data/CoCor_analysis/cocor_all_results.csv")
 ccle_spearman <- read.csv("data/CoCor_analysis/cocor_spearman_all_results.csv")
@@ -19,6 +20,7 @@ all_transcripts <- unique(c(
   ccle_spearman$transcript_ID,
   tsoi_transcript_correlations$transcript_id
 ))
+
 
 supplemental_table <- data.frame(
   transcript_id = all_transcripts,
@@ -166,6 +168,72 @@ supplemental_table <- supplemental_table %>%
     is_discordant = transcript_id %in% discordant_list$transcript_id
   )
 
+# Add gene ID
+# Extract gene_id from correlated list
+correlated_gene_mapping <- correlated_list %>%
+  select(transcript_id, gene_id = Gene.x) %>%
+  distinct()
+
+# Extract gene_id from discordant list
+discordant_gene_mapping <- discordant_list %>%
+  select(transcript_id, gene_id = Gene) %>%
+  distinct()
+
+# Combine both mappings (discordant takes priority if there's overlap)
+gene_mapping_combined <- bind_rows(
+  correlated_gene_mapping,
+  discordant_gene_mapping
+) %>%
+  distinct(transcript_id, .keep_all = TRUE)  # Keep first occurrence (or use group_by logic)
+
+# Join gene_id into supplemental_table
+# This will update existing gene_id or add it if missing
+supplemental_table <- supplemental_table %>%
+  left_join(gene_mapping_combined, by = "transcript_id")
+
+# Load CCLE expression data
+ccle_transcript_expression <- fread("data/Transcript_expression_melanoma_log2.csv")
+ccle_gene_expression <- fread("data/Gene_expression_melanoma.csv")
+
+# Load Tsoi expression data
+Tsoi_trans_expr <- read.csv("data/Tsoi/kallisto_transcript_TPM.csv")
+Tsoi_gene_expr <- read.csv("data/Tsoi/kallisto_gene_TPM.csv")
+
+# Calculate CCLE median transcript expression for each transcript
+ccle_median_trans <- ccle_transcript_expression %>%
+  pivot_longer(-Sample_ID, names_to = "transcript_id", values_to = "expression") %>%
+  group_by(transcript_id) %>%
+  summarise(ccle_median_transcript_expression = median(expression, na.rm = TRUE), .groups = "drop")
+
+# Calculate Tsoi median transcript expression for each transcript
+# Log2 transform to match CCLE
+Tsoi_trans_log <- Tsoi_trans_expr %>%
+  pivot_longer(-transcript_id, names_to = "sample", values_to = "expression") %>%
+  mutate(expression = log2(expression + 1)) %>%
+  group_by(transcript_id) %>%
+  summarise(tsoi_median_transcript_expression = median(expression, na.rm = TRUE), .groups = "drop")
+
+# Calculate CCLE median gene expression for each gene
+ccle_median_gene <- ccle_gene_expression %>%
+  pivot_longer(-Sample_ID, names_to = "gene_id", values_to = "expression") %>%
+  group_by(gene_id) %>%
+  summarise(ccle_median_gene_expression = median(expression, na.rm = TRUE), .groups = "drop")
+
+# Calculate Tsoi median gene expression for each gene
+# Log2 transform to match CCLE
+Tsoi_gene_log <- Tsoi_gene_expr %>%
+  pivot_longer(-gene_id, names_to = "sample", values_to = "expression") %>%
+  mutate(expression = log2(expression + 1)) %>%
+  group_by(gene_id) %>%
+  summarise(tsoi_median_gene_expression = median(expression, na.rm = TRUE), .groups = "drop")
+
+# Join all median expression data to supplemental_table
+supplemental_table <- supplemental_table %>%
+  left_join(ccle_median_trans, by = "transcript_id") %>%
+  left_join(Tsoi_trans_log, by = "transcript_id") %>%
+  left_join(ccle_median_gene, by = "gene_id") %>%
+  left_join(Tsoi_gene_log, by = "gene_id")
+
 # Reorder columns to match requested order
 column_order <- c(
   "transcript_id",
@@ -199,16 +267,15 @@ supplemental_table_final <- supplemental_table[, existing_columns]
 # Save the table
 write.csv(supplemental_table_final, "supplemental_table.csv", row.names = FALSE)
 
+######################## Expression data ########################
 
 # Load CCLE expression data
 ccle_transcript_expression <- fread("data/Transcript_expression_melanoma_log2.csv")
+ccle_gene_expression <- fread("data/Gene_expression_melanoma.csv")
 
 # Load Tsoi expression data
 Tsoi_trans_expr <- read.csv("data/Tsoi/kallisto_transcript_TPM.csv")
-Tsoi_trans_expr$transcript_id <- sub("\\..*$", "", Tsoi_trans_expr$transcript_id)
-
 Tsoi_gene_expr <- read.csv("data/Tsoi/kallisto_gene_TPM.csv")
-Tsoi_gene_expr$gene_id <- sub("\\..*$", "", Tsoi_gene_expr$gene_id)
 
 # Export expression by transcript, just get median MITF expression per transcript
 tsoi_transcript_mitf_expression <- Tsoi_trans_expr %>%
