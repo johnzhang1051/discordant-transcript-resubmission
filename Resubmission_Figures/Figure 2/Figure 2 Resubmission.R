@@ -147,11 +147,24 @@ custom_colors <- c(
   "Unique" = "#FF0000"        # red
 )
 
-# Plot MITF_peak_n category proportions (same formatting as original)
-ggplot(mitf_distribution, aes(x = MITF_peak_n_cat, y = proportion, fill = group)) +
+# Calculate proportion with any MITF peak vs no peaks
+mitf_any_peak <- transcript_annotation %>%
+  mutate(has_any_peak = MITF_peak_n > 0) %>%
+  group_by(group, has_any_peak) %>%
+  summarise(n = n(), .groups = "drop") %>%
+  group_by(group) %>%
+  mutate(total = sum(n), proportion = n / total) %>%
+  ungroup()
+
+# Reorder factor levels for plotting
+mitf_any_peak$group <- factor(mitf_any_peak$group, 
+                              levels = c("All", "Correlation", "Unique"))
+
+# Plot Figure 2A Upper_right - Any peak vs no peak
+ggplot(mitf_any_peak, aes(x = has_any_peak, y = proportion, fill = group)) +
   geom_bar(stat = "identity", position = position_dodge(width = 0.9), show.legend = FALSE) +
   scale_fill_manual(values = custom_colors) +
-  #labs(title = "Number of MITF ChIP Peaks",y = "Percentage of Transcripts") +
+  scale_x_discrete(labels = c("FALSE" = "No Peak", "TRUE" = "Any Peak")) +
   theme_minimal(base_size = 14) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
   theme(
@@ -169,7 +182,7 @@ knockdown_data <- transcript_annotation %>%
   filter(avg_knockdown > 0 & avg_knockdown <= 2) %>%
   dplyr::select(transcript_id, group, avg_knockdown)
 
-# Boxplot (same formatting as original)
+# Boxplot Figure 2A Bottom Left
 ggplot(knockdown_data, aes(x = group, y = avg_knockdown, fill = group)) +
   geom_boxplot(outlier.shape = NA, alpha = 0.7) +
   scale_fill_manual(values = custom_colors) +
@@ -203,7 +216,7 @@ knockdown_binned <- transcript_annotation %>%
 knockdown_binned$knockdown_bin <- factor(knockdown_binned$knockdown_bin,
                                          levels = c("≤0.25", "0.26–0.5", "0.51–1", "≥1"))
 
-# Plot binned knockdown (same formatting as original)
+# Plot binned knockdown Figure 2A Bottom Right
 ggplot(knockdown_binned, aes(x = knockdown_bin, y = proportion, fill = group)) +
   geom_bar(stat = "identity", position = position_dodge(width = 0.8), show.legend = FALSE) +
   scale_fill_manual(values = custom_colors) +
@@ -211,75 +224,78 @@ ggplot(knockdown_binned, aes(x = knockdown_bin, y = proportion, fill = group)) +
   theme_minimal(base_size = 14) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
   theme(
-    legend.position = element_blank(),
+    legend.position = "blank",
     axis.title.x = element_blank(),
     axis.title.y = element_blank())
 
 
 
 ## Proportion of Transcripts with Unique Promoters
-library(GenomicRanges)
+## Figure 2B
 
-# Extract transcript coordinates from Kenny dataset for promoter analysis
-transcript_coords <- Kenny %>%
-  dplyr::select(transcript_id, seqnames, start, end, strand, geneId) %>%
-  distinct() %>%
-  mutate(
-    # Define promoter as 1kb upstream of TSS
-    promoter_start = ifelse(strand == 1, start - 1000, end),
-    promoter_end = ifelse(strand == 1, start, end + 1000),
-    promoter_start = pmax(1, promoter_start)
+# Load promoter data
+transcript_type <- read.csv("data/transcripttype.csv")
+promoter_by_transcript <- read.csv("data/promoter_by_transcript.csv")
+
+# Remove the period and following numbers from transcript_id (same as Document 2)
+promoter_by_transcript$transcript_id <- sub("\\..*$", "", promoter_by_transcript[[1]])
+
+# Keep only protein_coding transcripts
+protein_coding_ids <- transcript_type %>%
+  filter(transcript_type == "protein_coding") %>%
+  pull(transcript_id)
+
+# Calculate unique promoters (exact same logic as Document 2)
+promoter_by_transcript <- promoter_by_transcript %>%
+  filter(transcript_id %in% protein_coding_ids) %>%
+  group_by(geneId, promoterId) %>%
+  mutate(promoter_count_within_gene = n()) %>%  # how many times this promoter appears in same gene
+  ungroup() %>%
+  group_by(geneId, transcript_id) %>%
+  mutate(is_unique_promoter = promoter_count_within_gene == 1) %>%
+  ungroup()
+promoter_by_transcript <- promoter_by_transcript[,-(2:4)]
+
+# Merge final transcripts (using "Unique" group)
+final_annotated <- transcript_unique %>%
+  inner_join(promoter_by_transcript, by = "transcript_id")
+
+# Merge correlation-only transcripts
+correlation_annotated <- transcript_correlation_all %>%
+  inner_join(promoter_by_transcript, by = "transcript_id")
+
+# Step 1: Add group labels (following Document 2 structure)
+all_df <- promoter_by_transcript %>%
+  select(transcript_id, is_unique_promoter) %>%
+  mutate(group = "All")
+
+correlation_df <- correlation_annotated %>%
+  select(transcript_id, is_unique_promoter) %>%
+  mutate(group = "Correlation")
+
+final_df <- final_annotated %>%
+  select(transcript_id, is_unique_promoter) %>%
+  mutate(group = "Unique")
+
+# Step 2: Combine all into one long dataframe
+combined_df <- bind_rows(all_df, correlation_df, final_df)
+
+# Step 3: Summarize for plotting
+summary_df <- combined_df %>%
+  group_by(group) %>%
+  summarise(
+    proportion_unique = mean(is_unique_promoter, na.rm = TRUE),
+    .groups = "drop"
   )
 
-transcript_coords_clean <- transcript_coords %>%
-  dplyr::select(-start, -end)  # Remove conflicting column names
+# Reorder factor levels for custom colors
+summary_df$group <- factor(summary_df$group, 
+                           levels = c("All", "Correlation", "Unique"))
 
-promoter_gr <- makeGRangesFromDataFrame(
-  transcript_coords_clean,
-  seqnames.field = "seqnames",
-  start.field = "promoter_start", 
-  end.field = "promoter_end",
-  strand.field = "strand",
-  keep.extra.columns = TRUE
-)
-
-# Find overlaps
-overlaps <- findOverlaps(promoter_gr, promoter_gr)
-overlap_summary <- as.data.frame(overlaps) %>%
-  filter(queryHits != subjectHits) %>%
-  group_by(queryHits) %>%
-  summarise(n_overlaps = n(), .groups = "drop")
-
-# Transcripts with unique (non-overlapping) promoters
-unique_promoter_indices <- setdiff(1:length(promoter_gr), overlap_summary$queryHits)
-unique_promoter_transcripts <- transcript_coords$transcript_id[unique_promoter_indices]
-
-# Function to calculate unique promoter proportions
-compute_unique_promoter_proportion <- function(transcript_group, label) {
-  overlap_count <- sum(transcript_group$transcript_id %in% unique_promoter_transcripts)
-  total <- nrow(transcript_group)
-  
-  data.frame(
-    group = label,
-    with_unique_promoter = overlap_count,
-    total = total,
-    proportion = overlap_count / total
-  )
-}
-
-# Calculate proportions using updated group names
-unique_promoter_stats <- bind_rows(
-  compute_unique_promoter_proportion(protein_coding, "All"),
-  compute_unique_promoter_proportion(transcript_correlation_all, "Correlation"),
-  compute_unique_promoter_proportion(transcript_unique, "Unique")
-)
-
-unique_promoter_stats$group <- factor(unique_promoter_stats$group, 
-                                      levels = c("All", "Correlation", "Unique"))
-
-# Plot (same style as original with custom colors)
-ggplot(unique_promoter_stats, aes(x = group, y = proportion, fill = group)) +
+# Step 4: Plot Figure 2B
+ggplot(summary_df, aes(x = group, y = proportion_unique, fill = group)) +
   geom_bar(stat = "identity", width = 0.6, show.legend = FALSE) +
+  geom_text(aes(label = round(proportion_unique, 2)), vjust = -0.5, size = 4) +
   scale_fill_manual(values = custom_colors) +
   theme_minimal(base_size = 14) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
@@ -293,33 +309,28 @@ ggplot(unique_promoter_stats, aes(x = group, y = proportion, fill = group)) +
 library(dplyr)
 library(tidyr)
 
-# 1. MITF PEAK ANALYSIS - Fisher's exact tests
-cat("=== MITF PEAK ANALYSIS ===\n")
+# 1. MITF PEAK ANALYSIS - Fisher's exact tests (ANY PEAK VS NO PEAK)
+cat("=== MITF PEAK ANALYSIS (Any Peak vs No Peak) ===\n")
 
 # Prepare MITF data for testing
 df_stats_mitf <- transcript_annotation %>%
-  mutate(MITF_peak_n_cat = case_when(
-    MITF_peak_n == 0 ~ "0",
-    MITF_peak_n == 1 ~ "1",
-    MITF_peak_n >= 2 ~ "≥2"
-  ))
+  mutate(has_any_peak = MITF_peak_n > 0)
 
-# Define groups and categories
+# Define groups
 groups <- c("Unique", "Correlation", "All")
-mitf_categories <- c("0", "1", "≥2")
 
-# Function for Fisher test on MITF peaks
-fisher_compare_mitf <- function(group1, group2, cat) {
+# Function for Fisher test - comparing groups within each peak category
+fisher_compare_mitf_by_category <- function(group1, group2, peak_status) {
   data_sub <- df_stats_mitf %>%
     filter(group %in% c(group1, group2)) %>%
-    mutate(in_category = MITF_peak_n_cat == cat)
+    mutate(in_category = has_any_peak == peak_status)
   
   tab <- table(data_sub$group, data_sub$in_category)
-  test <- fisher.test(tab, simulate.p.value = TRUE, B = 1e5)
+  test <- fisher.test(tab)
   
   data.frame(
     Comparison = paste(group1, "vs", group2),
-    Category = cat,
+    Category = ifelse(peak_status, "Any Peak", "No Peak"),
     P_value = signif(test$p.value, 4),
     Odds_Ratio = as.numeric(test$estimate),
     CI_lower = test$conf.int[1],
@@ -328,16 +339,19 @@ fisher_compare_mitf <- function(group1, group2, cat) {
   )
 }
 
-# Run MITF comparisons
+# Run MITF comparisons for both categories
 mitf_results <- list()
 for (i in 1:(length(groups) - 1)) {
   for (j in (i + 1):length(groups)) {
     g1 <- groups[i]
     g2 <- groups[j]
-    for (cat in mitf_categories) {
-      res <- fisher_compare_mitf(g1, g2, cat)
-      mitf_results[[length(mitf_results) + 1]] <- res
-    }
+    # Test for "No Peak" category
+    res_no_peak <- fisher_compare_mitf_by_category(g1, g2, FALSE)
+    mitf_results[[length(mitf_results) + 1]] <- res_no_peak
+    
+    # Test for "Any Peak" category
+    res_any_peak <- fisher_compare_mitf_by_category(g1, g2, TRUE)
+    mitf_results[[length(mitf_results) + 1]] <- res_any_peak
   }
 }
 
@@ -361,7 +375,7 @@ mitf_all_results$Significance_adjusted <- case_when(
   TRUE ~ "n.s."
 )
 
-print("MITF Peak Analysis Results:")
+print("MITF Peak Analysis Results (Any Peak vs No Peak):")
 print(mitf_all_results)
 
 
@@ -501,54 +515,68 @@ print("Binned Knockdown Analysis Results:")
 print(knockdown_binned_all_results)
 
 
-# 4. UNIQUE PROMOTER ANALYSIS - Fisher's exact tests
+# 4. UNIQUE PROMOTER ANALYSIS - Fisher's exact tests (USING DOCUMENT 2 LOGIC)
 cat("\n=== UNIQUE PROMOTER ANALYSIS ===\n")
 
-# Function for unique promoter Fisher test
-fisher_compare_unique_promoter <- function(group1, group2, transcript_list1, transcript_list2, unique_promoter_transcripts) {
+# Function for unique promoter Fisher test (exact same as Document 2)
+make_fisher_table <- function(group1, group2, data) {
+  data_filtered <- data %>%
+    filter(group %in% c(group1, group2))
   
-  # Count overlaps for each group
-  group1_unique <- sum(transcript_list1$transcript_id %in% unique_promoter_transcripts)
-  group1_total <- nrow(transcript_list1)
-  group1_non_unique <- group1_total - group1_unique
+  counts <- table(data_filtered$group, data_filtered$is_unique_promoter)
   
-  group2_unique <- sum(transcript_list2$transcript_id %in% unique_promoter_transcripts)
-  group2_total <- nrow(transcript_list2)
-  group2_non_unique <- group2_total - group2_unique
-  
-  # Create contingency table
-  tab <- matrix(c(group1_unique, group1_non_unique, group2_unique, group2_non_unique), 
-                nrow = 2, 
-                dimnames = list(c(group1, group2), c("Unique", "Non-unique")))
-  
-  test <- fisher.test(tab)
-  
-  data.frame(
-    Comparison = paste(group1, "vs", group2),
-    P_value = signif(test$p.value, 4),
-    Odds_Ratio = as.numeric(test$estimate),
-    CI_lower = test$conf.int[1],
-    CI_upper = test$conf.int[2],
-    Group1_proportion = group1_unique / group1_total,
-    Group2_proportion = group2_unique / group2_total,
-    stringsAsFactors = FALSE
+  # Ensure correct row and column ordering
+  result <- matrix(
+    c(counts[group1, "TRUE"],  counts[group1, "FALSE"],
+      counts[group2, "TRUE"],  counts[group2, "FALSE"]),
+    nrow = 2,
+    byrow = TRUE,
+    dimnames = list(
+      Group = c(group1, group2),
+      UniquePromoter = c("TRUE", "FALSE")
+    )
   )
+  
+  return(result)
 }
 
-# Run unique promoter comparisons
-unique_promoter_results <- list()
+# Create fisher tables and run tests
+fisher_table_all_corr <- make_fisher_table("All", "Correlation", combined_df)
+fisher_test_all_corr <- fisher.test(fisher_table_all_corr)
 
-# All vs Correlation
-res1 <- fisher_compare_unique_promoter("All", "Correlation", protein_coding, transcript_correlation_all, unique_promoter_transcripts)
-unique_promoter_results[[1]] <- res1
+fisher_table_all_unique <- make_fisher_table("All", "Unique", combined_df)
+fisher_test_all_unique <- fisher.test(fisher_table_all_unique)
 
-# All vs Unique  
-res2 <- fisher_compare_unique_promoter("All", "Unique", protein_coding, transcript_unique, unique_promoter_transcripts)
-unique_promoter_results[[2]] <- res2
+fisher_table_corr_unique <- make_fisher_table("Correlation", "Unique", combined_df)
+fisher_test_corr_unique <- fisher.test(fisher_table_corr_unique)
 
-# Correlation vs Unique
-res3 <- fisher_compare_unique_promoter("Correlation", "Unique", transcript_correlation_all, transcript_unique, unique_promoter_transcripts)
-unique_promoter_results[[3]] <- res3
+# Compile results
+unique_promoter_results <- list(
+  data.frame(
+    Comparison = "All vs Correlation",
+    P_value = signif(fisher_test_all_corr$p.value, 4),
+    Odds_Ratio = as.numeric(fisher_test_all_corr$estimate),
+    CI_lower = fisher_test_all_corr$conf.int[1],
+    CI_upper = fisher_test_all_corr$conf.int[2],
+    stringsAsFactors = FALSE
+  ),
+  data.frame(
+    Comparison = "All vs Unique",
+    P_value = signif(fisher_test_all_unique$p.value, 4),
+    Odds_Ratio = as.numeric(fisher_test_all_unique$estimate),
+    CI_lower = fisher_test_all_unique$conf.int[1],
+    CI_upper = fisher_test_all_unique$conf.int[2],
+    stringsAsFactors = FALSE
+  ),
+  data.frame(
+    Comparison = "Correlation vs Unique",
+    P_value = signif(fisher_test_corr_unique$p.value, 4),
+    Odds_Ratio = as.numeric(fisher_test_corr_unique$estimate),
+    CI_lower = fisher_test_corr_unique$conf.int[1],
+    CI_upper = fisher_test_corr_unique$conf.int[2],
+    stringsAsFactors = FALSE
+  )
+)
 
 unique_promoter_all_results <- do.call(rbind, unique_promoter_results)
 unique_promoter_all_results$P_adjusted_FDR <- p.adjust(unique_promoter_all_results$P_value, method = "fdr")
