@@ -1,24 +1,24 @@
 library(dplyr)
+library(conflicted)
 library(data.table)
 library(tidyr)
+library(biomaRt)
+
+
+conflicts_prefer(dplyr::select)
+conflicts_prefer(dplyr::filter)
+conflicts_prefer(dplyr::rename)
+
 
 # Load transcript lists
 discordant_list <- read.csv("data/final_paper_lists/discordant_RESUBMISSION.csv")
 correlated_list <- read.csv("data/final_paper_lists/correlated_RESUBMISSION.csv")
 
-
-# Load correlation data
-ccle_pearson <- read.csv("data/CoCor_analysis/cocor_all_results.csv")
-ccle_spearman <- read.csv("data/CoCor_analysis/cocor_spearman_all_results.csv")
-tsoi_transcript_correlations <- read.csv("data/Tsoi/correlation_to_ENST00000394351.csv")
-
-# Tsoi gene correlations?
-
-# Start with all unique transcripts
+############# Create initial table #############
+# Create table with all transcripts that have correlation data
 all_transcripts <- unique(c(
-  ccle_pearson$transcript_ID,
-  ccle_spearman$transcript_ID,
-  tsoi_transcript_correlations$transcript_id
+  discordant_list$transcript_id,
+  correlated_list$transcript_id
 ))
 
 
@@ -27,7 +27,45 @@ supplemental_table <- data.frame(
   stringsAsFactors = FALSE
 )
 
-# Add CCLE correlations
+############# Classify Discordant Correlated #############
+supplemental_table <- supplemental_table %>%
+  mutate(
+    is_correlated = transcript_id %in% correlated_list$transcript_id,
+    is_discordant = transcript_id %in% discordant_list$transcript_id
+  )
+
+############# Add gene ID #############
+# Extract gene_id from correlated list
+correlated_gene_mapping <- correlated_list %>%
+  select(transcript_id, gene_id = Gene.x) %>%
+  distinct()
+
+# Extract gene_id from discordant list
+discordant_gene_mapping <- discordant_list %>%
+  select(transcript_id, gene_id = Gene) %>%
+  distinct()
+
+# Combine both mappings (discordant takes priority if there's overlap)
+gene_mapping_combined <- bind_rows(
+  correlated_gene_mapping,
+  discordant_gene_mapping
+) %>%
+  distinct(transcript_id, .keep_all = TRUE)  # Keep first occurrence (or use group_by logic)
+
+# Join gene_id into supplemental_table
+# This will update existing gene_id or add it if missing
+supplemental_table <- supplemental_table %>%
+  left_join(gene_mapping_combined, by = "transcript_id")
+
+############# Correlation Metrics #############
+# Load correlation data
+ccle_pearson <- read.csv("data/CoCor_analysis/cocor_all_results.csv")
+ccle_spearman <- read.csv("data/CoCor_analysis/cocor_spearman_all_results.csv")
+tsoi_transcript_correlations <- read.csv("data/Tsoi/correlation_to_ENST00000394351.csv")
+
+# Tsoi gene correlations - couldn't find this
+
+# Create table with all transcripts that have correlation data
 ccle_corr_data <- ccle_pearson %>%
   select(transcript_id = transcript_ID,
          ccle_transcript_pearson = r_transcript,
@@ -40,6 +78,7 @@ ccle_corr_data <- ccle_pearson %>%
     by = "transcript_id"
   )
 
+# Join in CCLE correlation data
 supplemental_table <- left_join(supplemental_table, ccle_corr_data, by = "transcript_id")
 
 # Add Tsoi transcript-level correlations
@@ -50,6 +89,8 @@ tsoi_corr_data <- tsoi_transcript_correlations %>%
 
 supplemental_table <- left_join(supplemental_table, tsoi_corr_data, by = "transcript_id")
 
+
+############# Overexpression Metrics #############
 # Add MITF Overexpression data
 GSE163646_OE <- read.csv("data/mitf_oe/GSE_163646_OE_kallisto_transcript_TPM.csv")
 PRJNA704810_OE <- read.csv("data/mitf_oe/PRJNA704810_OE_kallisto_transcript_TPM.csv")
@@ -77,7 +118,7 @@ oe_ratios <- merged_OE %>%
 
 supplemental_table <- left_join(supplemental_table, oe_ratios, by = "transcript_id")
 
-# Add MITF Knockdown data
+############# MITF Knockdown #############
 PRJEB30337 <- read.csv("data/mitf_oe/PRJEB30337_TPM.csv")
 GSE163646_KD <- read.csv("data/mitf_oe/GSE_163646_kallisto_transcript_TPM.csv")
 Henja <- read.csv("data/mitf_oe/Henja_TPM.csv")
@@ -122,6 +163,7 @@ kd_ratios <- merged_siMITF %>%
 
 supplemental_table <- left_join(supplemental_table, kd_ratios, by = "transcript_id")
 
+############# Peak Data Metrics #############
 # Add ChIP-seq peak data
 Kenny <- read.csv("data/chip/Kenny.csv")
 Laurette <- read.csv("data/chip/Laurette.csv")
@@ -158,46 +200,52 @@ supplemental_table <- supplemental_table %>%
     has_peak_GSE77437_Louph = transcript_id %in% Louph_promoters$transcript_id
   )
 
-# Add classification flags
-supplemental_table <- supplemental_table %>%
-  filter(is_correlated | is_discordant)
-
-supplemental_table <- supplemental_table %>%
-  mutate(
-    is_correlated = transcript_id %in% correlated_list$transcript_id,
-    is_discordant = transcript_id %in% discordant_list$transcript_id
-  )
-
-# Add gene ID
-# Extract gene_id from correlated list
-correlated_gene_mapping <- correlated_list %>%
-  select(transcript_id, gene_id = Gene.x) %>%
-  distinct()
-
-# Extract gene_id from discordant list
-discordant_gene_mapping <- discordant_list %>%
-  select(transcript_id, gene_id = Gene) %>%
-  distinct()
-
-# Combine both mappings (discordant takes priority if there's overlap)
-gene_mapping_combined <- bind_rows(
-  correlated_gene_mapping,
-  discordant_gene_mapping
-) %>%
-  distinct(transcript_id, .keep_all = TRUE)  # Keep first occurrence (or use group_by logic)
-
-# Join gene_id into supplemental_table
-# This will update existing gene_id or add it if missing
-supplemental_table <- supplemental_table %>%
-  left_join(gene_mapping_combined, by = "transcript_id")
-
+############# Transcript Expression #############
 # Load CCLE expression data
 ccle_transcript_expression <- fread("data/Transcript_expression_melanoma_log2.csv")
 ccle_gene_expression <- fread("data/Gene_expression_melanoma.csv")
 
 # Load Tsoi expression data
 Tsoi_trans_expr <- read.csv("data/Tsoi/kallisto_transcript_TPM.csv")
+Tsoi_trans_expr$transcript_id <- sub("\\..*", "", Tsoi_trans_expr$transcript_id)
+
 Tsoi_gene_expr <- read.csv("data/Tsoi/kallisto_gene_TPM.csv")
+Tsoi_gene_expr$gene_id <- sub("\\..*", "", Tsoi_gene_expr$gene_id)
+
+# Need to map Tsoi gene_id's to transcript_id's:
+# Calculate Tsoi median gene expression for each gene
+# Log2 transform to match CCLE
+Tsoi_gene_log <- Tsoi_gene_expr %>%
+  pivot_longer(-gene_id, names_to = "sample", values_to = "expression") %>%
+  mutate(expression = log2(expression + 1)) %>%
+  group_by(gene_id) %>%
+  summarise(tsoi_median_gene_expression = median(expression, na.rm = TRUE), .groups = "drop")
+
+ensembl <- useMart("ensembl", dataset = "hsapiens_gene_ensembl")
+
+# Get mapping between gene symbols and Ensembl gene IDs
+gene_mapping <- getBM(
+  attributes = c('hgnc_symbol', 'ensembl_gene_id'),
+  filters = 'hgnc_symbol',
+  values = unique(supplemental_table$gene_id),
+  mart = ensembl
+)
+
+# Clean up column names
+gene_mapping <- gene_mapping %>%
+  rename(gene_id = hgnc_symbol, ensembl_gene_id = ensembl_gene_id)
+
+# Join mapping to get Ensembl gene IDs in supplemental_table
+supplemental_table_with_ensembl <- supplemental_table %>%
+  left_join(gene_mapping, by = "gene_id")
+
+# Now join Tsoi gene expression using Ensembl gene IDs
+Tsoi_gene_log_mapped <- Tsoi_gene_log %>%
+  left_join(supplemental_table_with_ensembl %>% 
+              select(transcript_id, ensembl_gene_id) %>% 
+              distinct(), 
+            by = c("gene_id" = "ensembl_gene_id")) %>%
+  select(transcript_id, tsoi_median_gene_expression)
 
 # Calculate CCLE median transcript expression for each transcript
 ccle_median_trans <- ccle_transcript_expression %>%
@@ -219,68 +267,100 @@ ccle_median_gene <- ccle_gene_expression %>%
   group_by(gene_id) %>%
   summarise(ccle_median_gene_expression = median(expression, na.rm = TRUE), .groups = "drop")
 
-# Calculate Tsoi median gene expression for each gene
-# Log2 transform to match CCLE
-Tsoi_gene_log <- Tsoi_gene_expr %>%
-  pivot_longer(-gene_id, names_to = "sample", values_to = "expression") %>%
-  mutate(expression = log2(expression + 1)) %>%
-  group_by(gene_id) %>%
-  summarise(tsoi_median_gene_expression = median(expression, na.rm = TRUE), .groups = "drop")
-
 # Join all median expression data to supplemental_table
 supplemental_table <- supplemental_table %>%
   left_join(ccle_median_trans, by = "transcript_id") %>%
   left_join(Tsoi_trans_log, by = "transcript_id") %>%
   left_join(ccle_median_gene, by = "gene_id") %>%
-  left_join(Tsoi_gene_log, by = "gene_id")
+  left_join(Tsoi_gene_log_mapped, by = "transcript_id")
 
-# Reorder columns to match requested order
-column_order <- c(
-  "transcript_id",
-  "gene_id",
-  "ccle_transcript_spearman",
-  "ccle_transcript_pearson",
-  "tsoi_transcript_spearman",
-  "tsoi_transcript_pearson",
-  "ccle_gene_spearman",
-  "ccle_gene_pearson",
-  "tsoi_gene_spearman",
-  "tsoi_gene_pearson",
-  "PRJNA704810_OE_MITF_CON",
-  "GSE163646_OE_MITF_CON",
-  "PRJEB30337_siCON_siMITF",
-  "GSE163646_siCON_siMITF",
-  "GSE283655_siCON_siMITF",
-  "GSE115845_siCON_siMITF",
-  "has_peak_GSE153020_Kenny",
-  "has_peak_GSE61965_Laurette",
-  "has_peak_GSE77437_Louph",
-  "transcript_type",
-  "is_correlated",
-  "is_discordant"
-)
+######################## MITF-HIGH  Expression ########################
+# Filter to cell-lines that are "MITF-High" expressing (each row in ccle_transcript_expression is a cell-line)
 
-# Select only columns that exist
-existing_columns <- intersect(column_order, colnames(supplemental_table))
-supplemental_table_final <- supplemental_table[, existing_columns]
+# CCLE Cell-Lines Filtering:
+# In CCLE: rows are cell lines (Sample_ID), columns are transcripts
+# Get MITF transcript expression from CCLE (ENST00000394351)
+ccle_mitf_column <- "ENST00000394351"
 
-# Save the table
-write.csv(supplemental_table_final, "supplemental_table.csv", row.names = FALSE)
+# Check if MITF column exists, if not find the correct column name
+if (!ccle_mitf_column %in% colnames(ccle_transcript_expression)) {
+  # Find column that contains ENST00000394351
+  ccle_mitf_column <- grep("ENST00000394351", colnames(ccle_transcript_expression), value = TRUE)[1]
+}
 
-######################## Expression data ########################
+# Calculate median MITF expression across all CCLE cell lines
+ccle_mitf_median <- median(ccle_transcript_expression[[ccle_mitf_column]], na.rm = TRUE)
 
-# Load CCLE expression data
-ccle_transcript_expression <- fread("data/Transcript_expression_melanoma_log2.csv")
-ccle_gene_expression <- fread("data/Gene_expression_melanoma.csv")
+# Identify MITF-high CCLE cell lines (rows where MITF expression >= median)
+ccle_mitf_high_cells <- ccle_transcript_expression %>%
+  filter(.data[[ccle_mitf_column]] >= ccle_mitf_median) %>%
+  pull(Sample_ID)
 
-# Load Tsoi expression data
-Tsoi_trans_expr <- read.csv("data/Tsoi/kallisto_transcript_TPM.csv")
-Tsoi_gene_expr <- read.csv("data/Tsoi/kallisto_gene_TPM.csv")
+# Recalculate CCLE median transcript expression using only MITF-high cell lines
+ccle_median_trans_mitf_high <- ccle_transcript_expression %>%
+  filter(Sample_ID %in% ccle_mitf_high_cells) %>%
+  pivot_longer(-Sample_ID, names_to = "transcript_id", values_to = "expression") %>%
+  group_by(transcript_id) %>%
+  summarise(ccle_median_transcript_expression_mitf_high = median(expression, na.rm = TRUE), .groups = "drop")
 
-# Export expression by transcript, just get median MITF expression per transcript
-tsoi_transcript_mitf_expression <- Tsoi_trans_expr %>%
-  mutate(
-    MITF_median_expression = median(as.numeric(mitf_raw[1, -1]), na.rm = TRUE),
-    MITF_mean_expression = mean(as.numeric(mitf_raw[1, -1]), na.rm = TRUE)
-  ) %>%
-  select(transcript_id, MITF_median_expression, MITF_mean_expression)
+# Recalculate CCLE median gene expression using only MITF-high cell lines
+ccle_median_gene_mitf_high <- ccle_gene_expression %>%
+  filter(Sample_ID %in% ccle_mitf_high_cells) %>%
+  pivot_longer(-Sample_ID, names_to = "gene_id", values_to = "expression") %>%
+  group_by(gene_id) %>%
+  summarise(ccle_median_gene_expression_mitf_high = median(expression, na.rm = TRUE), .groups = "drop")
+
+# Tsoi Cell-Lines Filtering (each column in Tsoi_trans_expr is a cell-line)
+# Get MITF transcript expression from Tsoi
+tsoi_mitf_expr <- Tsoi_trans_expr %>%
+  filter(transcript_id == "ENST00000394351")
+
+# Calculate median MITF expression across all Tsoi samples
+tsoi_mitf_values <- as.numeric(tsoi_mitf_expr[1, -1])
+tsoi_mitf_median <- median(tsoi_mitf_values, na.rm = TRUE)
+
+# Identify MITF-high Tsoi samples (those above median)
+tsoi_mitf_high_samples <- names(tsoi_mitf_expr[1, -1])[tsoi_mitf_values >= tsoi_mitf_median]
+
+# Recalculate Tsoi median transcript expression using only MITF-high samples
+# Log2 transform to match CCLE
+Tsoi_trans_log_mitf_high <- Tsoi_trans_expr %>%
+  select(transcript_id, all_of(tsoi_mitf_high_samples)) %>%
+  pivot_longer(-transcript_id, names_to = "sample", values_to = "expression") %>%
+  mutate(expression = log2(expression + 1)) %>%
+  group_by(transcript_id) %>%
+  summarise(tsoi_median_transcript_expression_mitf_high = median(expression, na.rm = TRUE), .groups = "drop")
+
+# Recalculate Tsoi median gene expression using only MITF-high samples
+Tsoi_gene_log_mitf_high <- Tsoi_gene_expr %>%
+  select(gene_id, all_of(tsoi_mitf_high_samples)) %>%
+  pivot_longer(-gene_id, names_to = "sample", values_to = "expression") %>%
+  mutate(expression = log2(expression + 1)) %>%
+  group_by(gene_id) %>%
+  summarise(tsoi_median_gene_expression_mitf_high = median(expression, na.rm = TRUE), .groups = "drop")
+
+# Map Tsoi gene expression to transcript IDs
+Tsoi_gene_log_mapped_mitf_high <- Tsoi_gene_log_mitf_high %>%
+  left_join(supplemental_table_with_ensembl %>% 
+              select(transcript_id, ensembl_gene_id) %>% 
+              distinct(), 
+            by = c("gene_id" = "ensembl_gene_id")) %>%
+  select(transcript_id, tsoi_median_gene_expression_mitf_high)
+
+# Join MITF-high expression data to supplemental_table
+supplemental_table <- supplemental_table %>%
+  left_join(ccle_median_trans_mitf_high, by = "transcript_id") %>%
+  left_join(ccle_median_gene_mitf_high, by = "gene_id") %>%
+  left_join(Tsoi_trans_log_mitf_high, by = "transcript_id") %>%
+  left_join(Tsoi_gene_log_mapped_mitf_high, by = "transcript_id")
+
+######################## Ebox Count  ########################
+# Load Ebox calculations from Figure 2 code
+transcript_ebox_counts <- read.csv("data/transcript_ebox_counts.csv")
+
+# Join ebox_n into supplemental table
+supplemental_table <- supplemental_table %>%
+  left_join(transcript_ebox_counts %>% select(transcript_id, EBOX_n), by = "transcript_id")
+
+######################## Export Final Table ########################
+write.csv(supplemental_table, "supplemental_table.csv", row.names = FALSE)

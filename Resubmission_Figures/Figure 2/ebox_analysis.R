@@ -181,3 +181,5 @@ all_ebox_results$Significance_adjusted <- case_when(
 )
 
 print(all_ebox_results)
+
+write.csv(transcript_annotation, "output/transcript_ebox_counts.csv", row.names = FALSE)
