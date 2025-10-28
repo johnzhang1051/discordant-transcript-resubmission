@@ -4,3 +4,5 @@
 !*.R
 !*.md
 !*.ai
+!table_column_mappings.xlsx
+!supplemental_table.csv
