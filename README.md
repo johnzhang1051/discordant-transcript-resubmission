@@ -1,29 +1,47 @@
 # discordant-transcript-resubmission
 Re-organized code for paper identifying MITF regulated transcript isoforms
 
+# Data Sources:
+Depmap:
+   * OmicsExpressionProteinCodingGenesTPMLogp1BatchCorrected.csv
+   * OmicsExpressionTranscriptsExpectedCountProfile.csv
+   * Profile_Sample_ID.csv
+   * Melanoma_Sample_ID.csv
+
+Tsoi:
+   * gencode.v44.annotation.gtf
+
 # Analysis Flow/Steps:
 
 1. NEWEST_CCLE:
-   * Get original datasets from Depmap
-   * Datasets:
-      * OmicsExpressionProteinCodingGenesTPMLogp1BatchCorrected
-      * OmicsExpressionTranscriptsExpectedCountProfile
-      * Profile_Sample_ID
-      * Melanoma_Sample_ID
-      * Model - **not used anywhere?**
-      * Melanoma_models - **not used anywhere?**
+   * Download original datasets from Depmap and Tsoi
 2. NEWEST_CCLE:
-   * Clean data in `NEWEST_CCLE/CoCor_Data_sets/Clean_Newest_CCLE_Melanoma_Expression.R`
-   * In `NEWEST_CCLE/CoCor_CCLE.R` generate correlation values (pearson + spearman) for transcripts correlated with MITF (>= 0.5 both), and identify discordant transcripts using CoCor
+   * Transcript and gene expression data is cleaned in `NEWEST_CCLE/CoCor_Data_sets/Clean_Newest_CCLE_Melanoma_Expression.R`
+* Discordant and correlated transcripts are idenitified in `NEWEST_CCLE/CoCor_CCLE.R` - where we calculate correlation values (pearson + spearman) between transcripts and `ENST00000394351`/MITF 
+      * FDR values are also calculated using CoCor
+      * We create a final `CoCor_final_list_protein_coding.csv` which consists of transcripts that have:
+         * Transcript-MITF correlation (pearson or spearman) >=0.5
+         * Gene-MITF correlation (pearson or spearman) <= 0.05
+         * FDR p-value < 0.05
+         * `transcript_type` = protein_coding
+      * This will give us the **discordant transcripts** from the CCLE data
+      * We continue identifying discordant transcripts using `Tsoi` data
 3. Tsoi:
    * In `NEWEST_CCLE/CCLE_Tsoi_final_discordant.R`
-   * Import Tsoi datasets
-   * Generate correlation values, then filter only to transcripts correlated with MITF (>= 0.5)
-   * Inner join/overlap CCLE discordant transcripts with Tsoi correlated transcripts to make final list
-   * This gives us our pre-filtered lists of discordant transcripts and correlated transcripts
+   * Tsoi datasets are imported and organized
+   * Tsoi correlations are calculated (pearson + spearman)
+   * Transcripts are filtered to only those correlated with MITF (>= 0.5 for either pearson or spearman)
+   * We find the overlap between the Tsoi correlated with the CCLE discordant transcripts with Tsoi correlated transcripts to make final list
+   * This gives us our pre-filtered list of discordant transcripts
 4. NEWEST_CCLE:
-   * Run the 3 filter .R scripts in `NEWEST_CCLE/Filter_low_expressed`
-   * That gives us the final 3 lists of transcripts we'll use to run analysis
+   * We then identify **"MITF-Correlated"** transcripts in `NEWEST_CCLE/MITF_correlated_final.R`
+      * Here, we take transcripts from CCLE and Tsoi where Pearson or Spearman >= 0.5 (these correlations were calculated in the previous steps)
+      * Then combine CCLE + Tsoi lists into one, and export as a pre-filtered list of correlated transcripts called `final_MITF_correlated.csv`
+   * In `NEWEST_CCLE/Filter_low_expressed`, we run the filtering logic `>10 count in >=25% of samples` on 3 lists:
+      * `NEWEST_CCLE/Filter_low_expressed/filter_discordant.R`
+      * `NEWEST_CCLE/Filter_low_expressed/filter_correlated.R`
+      * `NEWEST_CCLE/Filter_low_expressed/filter_protein_coding.R`
+   * That gives us the final 3 lists of transcripts we'll use to create Figures
 5. Resubmission_Figures:
    * Create Supplementary Figures and Files:
    * Figure 1:

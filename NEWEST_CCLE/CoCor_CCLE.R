@@ -180,12 +180,12 @@ spearman_r_transcript_0.5 <- results_spearman_fdr %>%
 # Subset 2: r_transcript ≥ 0.5 and r_gene ≥ 0.5
 spearman_r_transcript_gene_0.5 <- results_spearman_fdr %>%
   filter(!is.na(r_transcript), !is.na(r_gene),
-         r_transcript >= 0.5, r_gene >= 0.5)
+         r_transcript >= 0.5, r_gene > 0.5)
 
 # Subset 3: r_transcript ≥ 0.5 and r_gene < 0.5
 spearman_r_transcript_0.5_gene_lt_0.5 <- results_spearman_fdr %>%
   filter(!is.na(r_transcript), !is.na(r_gene),
-         r_transcript >= 0.5, r_gene < 0.5)
+         r_transcript >= 0.5, r_gene <= 0.5)
 
 write.csv(results_spearman, "CoCor_analysis/cocor_spearman_all_results.csv", row.names = FALSE)
 write.csv(results_spearman_fdr, "CoCor_analysis/cocor_spearman_fdr_results.csv", row.names = FALSE)
