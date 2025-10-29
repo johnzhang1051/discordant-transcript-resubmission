@@ -17,7 +17,9 @@ Tsoi:
    * Download original datasets from Depmap and Tsoi
 2. NEWEST_CCLE:
    * Transcript and gene expression data is cleaned in `NEWEST_CCLE/CoCor_Data_sets/Clean_Newest_CCLE_Melanoma_Expression.R`
-* Discordant and correlated transcripts are idenitified in `NEWEST_CCLE/CoCor_CCLE.R` - where we calculate correlation values (pearson + spearman) between transcripts and `ENST00000394351`/MITF 
+   * `NEWEST_CCLE/Spearman_Pearson_calculation.R` generates correlations
+   * `NEWEST_CCLE/Cleaning_correlation_lists.R` uses those correlations to generate `human_transcript_gene_map.csv`
+   * Discordant and correlated transcripts are idenitified in `NEWEST_CCLE/CoCor_CCLE.R` - where we calculate correlation values (pearson + spearman) between transcripts and `ENST00000394351`/MITF 
       * FDR values are also calculated using CoCor
       * We create a final `CoCor_final_list_protein_coding.csv` which consists of transcripts that have:
          * Transcript-MITF correlation (pearson or spearman) >=0.5

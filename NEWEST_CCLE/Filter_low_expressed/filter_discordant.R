@@ -1,11 +1,11 @@
 library(data.table)
+library(conflicted)
+conflicts_prefer(data.table::transpose)
 
 # Import the large CSV using fread
 Transcript_expression <- fread("Data/Transcript_expression_melanoma.csv")
 
 discordant <- read.csv("Data/CCLE_Tsoi_discordant_protein_coding.csv")
-
-library(data.table)
 
 # Ensure both are data.tables
 Transcript_expression <- as.data.table(Transcript_expression)
@@ -37,4 +37,4 @@ filtered_discordant <- merge(discordant, expr_t[, .(transcript_id, pass_25pct)],
 # Step 7: Keep only passing
 discordant_filtered <- filtered_discordant[pass_25pct == TRUE]
 
-write.csv(discordant_filtered, "final_paper_lists/discordant_RESUBMISSION.csv")
+write.csv(discordant_filtered, "final_paper_lists/discordant_RESUBMISSION.csv", row.names = FALSE)

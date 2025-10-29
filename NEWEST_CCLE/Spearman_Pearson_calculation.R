@@ -62,7 +62,7 @@ write.csv(cor_trans_spearman, "PearsonSpearman_CCLE/Transcript_Spearman_ENST0000
 write.csv(cor_trans_pearson,  "PearsonSpearman_CCLE/Transcript_Pearson_ENST00000394351.csv",  row.names = FALSE)
 ## subset protein coding and resave
 # Ensure IDs are characters
-transcript_type$ID <- as.character(transcript_type$ID)
+transcript_type$ID <- as.character(transcript_type$transcript_ID)
 cor_trans_spearman$ID <- as.character(cor_trans_spearman$ID)
 cor_trans_pearson$ID  <- as.character(cor_trans_pearson$ID)
 

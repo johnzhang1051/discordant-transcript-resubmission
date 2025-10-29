@@ -1,4 +1,5 @@
 library(data.table)
+library(dplyr)
 
 # Import the large CSV using fread
 Transcript_expression <- fread("Data/Transcript_expression_melanoma.csv")
@@ -38,16 +39,14 @@ correlated_filtered <- filtered_correlated[pass_25pct == TRUE]
 
 
 discordant_final_list <- read.csv("final_paper_LISTS/discordant_RESUBMISSION.csv")
-library(dplyr)
 correlated_PAPER <- correlated_filtered %>%
-  filter(!(transcript_id %in% correlated_final_list$transcript_id))
+  filter(!(transcript_id %in% discordant_final_list$transcript_id))
 
-
-
-  library(dplyr)
 
 # Merge by transcript_id
 transcript_type <- read.csv("Data/transcripttype.csv")
+colnames(transcript_type)[1] <- "transcript_id"
+
 
 correlated_protein_coding <- correlated_PAPER %>%
   inner_join(transcript_type, by = "transcript_id")

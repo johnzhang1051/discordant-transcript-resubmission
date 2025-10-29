@@ -4,7 +4,7 @@ library(dplyr)
 
 # Step 1: Build transcript-to-gene mapping (if not already done)
 # NOTE: If you already have this as a .tsv or prebuilt data.frame, you can skip this
-gtf_file <- "gencode.v44.annotation.gtf"
+gtf_file <- "Tsoi/gencode.v44.annotation.gtf"
 tx2gene <- rtracklayer::import(gtf_file) %>%
   as.data.frame() %>%
   filter(type == "transcript") %>%
@@ -62,7 +62,7 @@ transcript_tpm <- as.data.frame(txi_tx$abundance) %>%
 transcript_tpm$transcript_id <- sub("\\..*", "", transcript_tpm$transcript_id)
 write.csv(transcript_tpm, "Tsoi/kallisto_transcript_TPM.csv", row.names = FALSE)
 
-####### START HERE JZ ######
+####### START HERE IF YOU ALREADY HAVE kallisto_transcript_TPM.csv and kallisto_gene_TPM.csv ######
 transcript_tpm <- read.csv("Tsoi/kallisto_transcript_TPM.csv")
 transcript_tpm$transcript_id <- sub("\\..*", "", transcript_tpm$transcript_id)
 
@@ -117,14 +117,9 @@ CCLE_discordant <- read.csv("CoCor_analysis/CoCor_final_list_protein_coding.csv"
 colnames(CCLE_discordant)[2] <- "transcript_id"
 
 library(dplyr)
-
-# Make sure CCLE_discordant has a column named "transcript_id"
-# If not, rename it:
-# colnames(CCLE_discordant)[<column_number>] <- "transcript_id"
-
-# Step 1: Find overlapping transcripts
+# Step 1: Find overlapping transcripts between the CCLE discordants and Tsoi >= 0.5 correlated transcripts
 overlap_transcripts <- inner_join(cor_selected, CCLE_discordant, by = "transcript_id")
 
 # Step 2: Save the overlap
 write.csv(overlap_transcripts, "Tsoi/CCLE_Tsoi_discordant_protein_coding.csv", row.names = FALSE)
-write.csv(overlap_transcripts, "Filter_low_expressed/data/CCLE_Tsoi_discordant_protein_coding.csv", row.names = FALSE)
+write.csv(overlap_transcripts, "Filter_low_expressed/data/CCLE_Tsoi_discordant_protein_coding.csv", row.names = FALSE) # will have filtering logic applied to it

@@ -26,9 +26,7 @@ transcript_gene_map <- getBM(
 colnames(transcript_gene_map) <- c("transcript_ID", "Gene")
 # Save to CSV if needed
 write.csv(transcript_gene_map, "PearsonSpearman_CCLE_clean/human_transcript_gene_map.csv", row.names = FALSE)
-
-
-
+write.csv(transcript_gene_map, "CoCor_Data_sets/Cleaned_Data/human_transcript_gene_map.csv", row.names = FALSE)
 
 
 library(dplyr)

@@ -38,4 +38,4 @@ filtered_protein_coding <- merge(protein_coding, expr_t[, .(transcript_id, pass_
 # Step 7: Keep only passing
 protein_coding_filtered <- filtered_protein_coding[pass_25pct == TRUE]
 
-write.csv(protein_coding_filtered, "final_paper_lists/protein_coding_RESUBMISSION.csv")
+write.csv(protein_coding_filtered, "final_paper_lists/protein_coding_RESUBMISSION.csv", row.names = FALSE)
