@@ -213,13 +213,13 @@ Tsoi_gene_expr <- read.csv("data/Tsoi/kallisto_gene_TPM.csv")
 Tsoi_gene_expr$gene_id <- sub("\\..*", "", Tsoi_gene_expr$gene_id)
 
 # Need to map Tsoi gene_id's to transcript_id's:
-# Calculate Tsoi median gene expression for each gene
+# Calculate Tsoi mean gene expression for each gene
 # Log2 transform to match CCLE
 Tsoi_gene_log <- Tsoi_gene_expr %>%
   pivot_longer(-gene_id, names_to = "sample", values_to = "expression") %>%
   mutate(expression = log2(expression + 1)) %>%
   group_by(gene_id) %>%
-  summarise(tsoi_median_gene_expression = median(expression, na.rm = TRUE), .groups = "drop")
+  summarise(tsoi_mean_gene_expression = mean(expression, na.rm = TRUE), .groups = "drop")
 
 ensembl <- useMart("ensembl", dataset = "hsapiens_gene_ensembl")
 
@@ -245,33 +245,33 @@ Tsoi_gene_log_mapped <- Tsoi_gene_log %>%
               select(transcript_id, ensembl_gene_id) %>% 
               distinct(), 
             by = c("gene_id" = "ensembl_gene_id")) %>%
-  select(transcript_id, tsoi_median_gene_expression)
+  select(transcript_id, tsoi_mean_gene_expression)
 
-# Calculate CCLE median transcript expression for each transcript
-ccle_median_trans <- ccle_transcript_expression %>%
+# Calculate CCLE mean transcript expression for each transcript
+ccle_mean_trans <- ccle_transcript_expression %>%
   pivot_longer(-Sample_ID, names_to = "transcript_id", values_to = "expression") %>%
   group_by(transcript_id) %>%
-  summarise(ccle_median_transcript_expression = median(expression, na.rm = TRUE), .groups = "drop")
+  summarise(ccle_mean_transcript_expression = mean(expression, na.rm = TRUE), .groups = "drop")
 
-# Calculate Tsoi median transcript expression for each transcript
+# Calculate Tsoi mean transcript expression for each transcript
 # Log2 transform to match CCLE
 Tsoi_trans_log <- Tsoi_trans_expr %>%
   pivot_longer(-transcript_id, names_to = "sample", values_to = "expression") %>%
   mutate(expression = log2(expression + 1)) %>%
   group_by(transcript_id) %>%
-  summarise(tsoi_median_transcript_expression = median(expression, na.rm = TRUE), .groups = "drop")
+  summarise(tsoi_mean_transcript_expression = mean(expression, na.rm = TRUE), .groups = "drop")
 
-# Calculate CCLE median gene expression for each gene
-ccle_median_gene <- ccle_gene_expression %>%
+# Calculate CCLE mean gene expression for each gene
+ccle_mean_gene <- ccle_gene_expression %>%
   pivot_longer(-Sample_ID, names_to = "gene_id", values_to = "expression") %>%
   group_by(gene_id) %>%
-  summarise(ccle_median_gene_expression = median(expression, na.rm = TRUE), .groups = "drop")
+  summarise(ccle_mean_gene_expression = mean(expression, na.rm = TRUE), .groups = "drop")
 
-# Join all median expression data to supplemental_table
+# Join all mean expression data to supplemental_table
 supplemental_table <- supplemental_table %>%
-  left_join(ccle_median_trans, by = "transcript_id") %>%
+  left_join(ccle_mean_trans, by = "transcript_id") %>%
   left_join(Tsoi_trans_log, by = "transcript_id") %>%
-  left_join(ccle_median_gene, by = "gene_id") %>%
+  left_join(ccle_mean_gene, by = "gene_id") %>%
   left_join(Tsoi_gene_log_mapped, by = "transcript_id")
 
 ######################## MITF-HIGH  Expression ########################
@@ -289,55 +289,55 @@ if (!ccle_mitf_column %in% colnames(ccle_transcript_expression)) {
 }
 
 # Calculate median MITF expression across all CCLE cell lines
-ccle_mitf_median <- median(ccle_transcript_expression[[ccle_mitf_column]], na.rm = TRUE)
+ccle_mitf_cutoff <- median(ccle_transcript_expression[[ccle_mitf_column]], na.rm = TRUE)
 
-# Identify MITF-high CCLE cell lines (rows where MITF expression >= median)
+# Identify MITF-high CCLE cell lines (rows where MITF expression >= mean)
 ccle_mitf_high_cells <- ccle_transcript_expression %>%
-  filter(.data[[ccle_mitf_column]] >= ccle_mitf_median) %>%
+  filter(.data[[ccle_mitf_column]] >= ccle_mitf_cutoff) %>%
   pull(Sample_ID)
 
-# Recalculate CCLE median transcript expression using only MITF-high cell lines
-ccle_median_trans_mitf_high <- ccle_transcript_expression %>%
+# Recalculate CCLE mean transcript expression using only MITF-high cell lines
+ccle_mean_trans_mitf_high <- ccle_transcript_expression %>%
   filter(Sample_ID %in% ccle_mitf_high_cells) %>%
   pivot_longer(-Sample_ID, names_to = "transcript_id", values_to = "expression") %>%
   group_by(transcript_id) %>%
-  summarise(ccle_median_transcript_expression_mitf_high = median(expression, na.rm = TRUE), .groups = "drop")
+  summarise(ccle_mean_transcript_expression_mitf_high = mean(expression, na.rm = TRUE), .groups = "drop")
 
-# Recalculate CCLE median gene expression using only MITF-high cell lines
-ccle_median_gene_mitf_high <- ccle_gene_expression %>%
+# Recalculate CCLE mean gene expression using only MITF-high cell lines
+ccle_mean_gene_mitf_high <- ccle_gene_expression %>%
   filter(Sample_ID %in% ccle_mitf_high_cells) %>%
   pivot_longer(-Sample_ID, names_to = "gene_id", values_to = "expression") %>%
   group_by(gene_id) %>%
-  summarise(ccle_median_gene_expression_mitf_high = median(expression, na.rm = TRUE), .groups = "drop")
+  summarise(ccle_mean_gene_expression_mitf_high = mean(expression, na.rm = TRUE), .groups = "drop")
 
 # Tsoi Cell-Lines Filtering (each column in Tsoi_trans_expr is a cell-line)
 # Get MITF transcript expression from Tsoi
 tsoi_mitf_expr <- Tsoi_trans_expr %>%
   filter(transcript_id == "ENST00000394351")
 
-# Calculate median MITF expression across all Tsoi samples
+# Calculate mean MITF expression across all Tsoi samples
 tsoi_mitf_values <- as.numeric(tsoi_mitf_expr[1, -1])
-tsoi_mitf_median <- median(tsoi_mitf_values, na.rm = TRUE)
+tsoi_mitf_cutoff <- median(tsoi_mitf_values, na.rm = TRUE)
 
-# Identify MITF-high Tsoi samples (those above median)
-tsoi_mitf_high_samples <- names(tsoi_mitf_expr[1, -1])[tsoi_mitf_values >= tsoi_mitf_median]
+# Identify MITF-high Tsoi samples (those above mean)
+tsoi_mitf_high_samples <- names(tsoi_mitf_expr[1, -1])[tsoi_mitf_values >= tsoi_mitf_cutoff]
 
-# Recalculate Tsoi median transcript expression using only MITF-high samples
+# Recalculate Tsoi mean transcript expression using only MITF-high samples
 # Log2 transform to match CCLE
 Tsoi_trans_log_mitf_high <- Tsoi_trans_expr %>%
   select(transcript_id, all_of(tsoi_mitf_high_samples)) %>%
   pivot_longer(-transcript_id, names_to = "sample", values_to = "expression") %>%
   mutate(expression = log2(expression + 1)) %>%
   group_by(transcript_id) %>%
-  summarise(tsoi_median_transcript_expression_mitf_high = median(expression, na.rm = TRUE), .groups = "drop")
+  summarise(tsoi_mean_transcript_expression_mitf_high = mean(expression, na.rm = TRUE), .groups = "drop")
 
-# Recalculate Tsoi median gene expression using only MITF-high samples
+# Recalculate Tsoi mean gene expression using only MITF-high samples
 Tsoi_gene_log_mitf_high <- Tsoi_gene_expr %>%
   select(gene_id, all_of(tsoi_mitf_high_samples)) %>%
   pivot_longer(-gene_id, names_to = "sample", values_to = "expression") %>%
   mutate(expression = log2(expression + 1)) %>%
   group_by(gene_id) %>%
-  summarise(tsoi_median_gene_expression_mitf_high = median(expression, na.rm = TRUE), .groups = "drop")
+  summarise(tsoi_mean_gene_expression_mitf_high = mean(expression, na.rm = TRUE), .groups = "drop")
 
 # Map Tsoi gene expression to transcript IDs
 Tsoi_gene_log_mapped_mitf_high <- Tsoi_gene_log_mitf_high %>%
@@ -345,12 +345,12 @@ Tsoi_gene_log_mapped_mitf_high <- Tsoi_gene_log_mitf_high %>%
               select(transcript_id, ensembl_gene_id) %>% 
               distinct(), 
             by = c("gene_id" = "ensembl_gene_id")) %>%
-  select(transcript_id, tsoi_median_gene_expression_mitf_high)
+  select(transcript_id, tsoi_mean_gene_expression_mitf_high)
 
 # Join MITF-high expression data to supplemental_table
 supplemental_table <- supplemental_table %>%
-  left_join(ccle_median_trans_mitf_high, by = "transcript_id") %>%
-  left_join(ccle_median_gene_mitf_high, by = "gene_id") %>%
+  left_join(ccle_mean_trans_mitf_high, by = "transcript_id") %>%
+  left_join(ccle_mean_gene_mitf_high, by = "gene_id") %>%
   left_join(Tsoi_trans_log_mitf_high, by = "transcript_id") %>%
   left_join(Tsoi_gene_log_mapped_mitf_high, by = "transcript_id")
 
@@ -361,6 +361,17 @@ transcript_ebox_counts <- read.csv("data/transcript_ebox_counts.csv")
 # Join ebox_n into supplemental table
 supplemental_table <- supplemental_table %>%
   left_join(transcript_ebox_counts %>% select(transcript_id, EBOX_n), by = "transcript_id")
+
+######################## Rename Columns ########################
+supplemental_table <- supplemental_table %>%
+  rename(
+    `PRJNA704810_OE_MITF/CON` = PRJNA704810_OE_MITF_CON,
+    `GSE163646_OE_MITF/CON` = GSE163646_OE_MITF_CON,
+    `PRJEB30337_siCON/siMITF` = PRJEB30337_siCON_siMITF,
+    `GSE163646_siCON/siMITF` = GSE163646_siCON_siMITF,
+    `GSE283655_siCON/siMITF` = GSE283655_siCON_siMITF,
+    `GSE115845_siCON/siMITF` = GSE115845_siCON_siMITF
+  )
 
 ######################## Export Final Table ########################
 write.csv(supplemental_table, "supplemental_table.csv", row.names = FALSE)
