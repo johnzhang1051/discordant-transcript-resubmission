@@ -53,9 +53,9 @@ Tsoi:
       * Fully annotated dataset of all MITF-regulated transcript features
    * Supplementary Figure 1:
       * Outline of transcript filtering strategy
-      * This was already re-done by Steve
    * Supplementary Figure 2:
       * Expression of discordantly correlated genes is enriched in melanoma
+      * This was already re-done by Steve
    * Supplementary Figure 3:
       * Gene Ontology and pathway analysis
    * Supplementary Figure 4:
