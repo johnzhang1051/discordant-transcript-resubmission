@@ -1,6 +1,6 @@
 # If not already installed
-install.packages("BiocManager")
-BiocManager::install(c("clusterProfiler", "org.Hs.eg.db", "ReactomePA"))
+#install.packages("BiocManager")
+#BiocManager::install(c("clusterProfiler", "org.Hs.eg.db", "ReactomePA"))
 
 library(clusterProfiler)
 library(org.Hs.eg.db)
@@ -150,12 +150,12 @@ dotplot(reactome_correlation, showCategory = 15) +
 
 # Add source label
 ## update if you want to merge lists
-go_df <- as.data.frame(go_result) %>% mutate(Source = "GO")
-reactome_df <- as.data.frame(reactome_result) %>% mutate(Source = "Reactome")
+#go_df <- as.data.frame(go_result) %>% mutate(Source = "GO")
+#reactome_df <- as.data.frame(reactome_result) %>% mutate(Source = "Reactome")
 # Combine
-combined_enrichment <- bind_rows(go_df, reactome_df)
+#combined_enrichment <- bind_rows(go_df, reactome_df)
 # Save combined results
-write.csv(combined_enrichment, "go_results.Combined_GO_Reactome_correlation_final.csv", row.names = FALSE)
+#write.csv(combined_enrichment, "go_results.Combined_GO_Reactome_correlation_final.csv", row.names = FALSE)
 
 
 

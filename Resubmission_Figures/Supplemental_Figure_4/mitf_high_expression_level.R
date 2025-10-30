@@ -17,6 +17,9 @@ CCLE_trans_expr_clean <- CCLE_trans_expr[,-1]
 mitf_expr <- CCLE_trans_expr_clean %>%
   filter(transcript_id == "ENST00000394351")
 
+# Extract the expression values as a numeric vector
+mitf_values <- as.numeric(mitf_expr[1, -1])
+
 # Reshape to long format for plotting
 mitf_long <- mitf_expr %>%
   select(-transcript_id) %>%
