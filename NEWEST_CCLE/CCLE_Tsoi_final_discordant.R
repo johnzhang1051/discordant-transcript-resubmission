@@ -114,7 +114,7 @@ write.csv(cor_selected, "Tsoi/correlated_transcripts_r0.5.csv", row.names = FALS
 writeLines(cor_selected$transcript_id, "transcript_ids_r0.5.txt")
 
 CCLE_discordant <- read.csv("CoCor_analysis/CoCor_final_list_protein_coding.csv")
-colnames(CCLE_discordant)[2] <- "transcript_id"
+colnames(CCLE_discordant)[1] <- "transcript_id"
 
 library(dplyr)
 # Step 1: Find overlapping transcripts between the CCLE discordants and Tsoi >= 0.5 correlated transcripts
