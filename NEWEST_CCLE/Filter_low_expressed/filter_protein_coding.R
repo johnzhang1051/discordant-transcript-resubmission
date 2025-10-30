@@ -6,7 +6,7 @@ Transcript_expression <- fread("Data/Transcript_expression_melanoma.csv")
 transcript_type <- read.csv("Data/transcripttype.csv")
 
 protein_coding <- transcript_type %>% filter(transcript_type == "protein_coding")
-
+colnames(protein_coding)[1] <- "transcript_id"
 
 # Ensure both are data.tables
 Transcript_expression <- as.data.table(Transcript_expression)

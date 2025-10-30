@@ -1,5 +1,9 @@
 library(data.table)
 library(dplyr)
+library(conflicted)
+
+conflicts_prefer(dplyr::filter)
+
 Gene <- fread("CoCor_Data_sets/Cleaned_Data/Gene_expression_melanoma.csv")
 Transcript <- fread("CoCor_Data_sets/Cleaned_Data/Transcript_expression_melanoma_log2.csv")
 ### # Remove all rows where Sample_ID is "ACH-000931"as this is a duplicate in transcripts as has two different set of values
@@ -139,5 +143,6 @@ cor_results_sorted <- cor_results %>%
 # Optional: View top results
 head(cor_results_sorted, 10)
 
-
+######################## Saving new gene correlation code ########################
+write.csv(cor_results_sorted, "PearsonSpearman_CCLE/ENST00000394351_gene_correlations.csv", row.names = FALSE)
 

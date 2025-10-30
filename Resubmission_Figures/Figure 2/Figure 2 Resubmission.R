@@ -2,6 +2,9 @@ library(dplyr)
 library(ggplot2)
 library(tidyr)
 library(textshape)
+library(conflicted)
+
+conflicts_prefer(dplyr::select)
 
 # Load data using the same sources as your first two codes
 protein_coding <- read.csv("data/protein_coding_RESUBMISSION.csv")
